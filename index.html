@@ -41,6 +41,7 @@
                 <select id="select-prefix" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="UPDATE">UPDATE</option>
                     <option value="SHORT NEWS">SHORT NEWS</option>
+                    <option value="PHOTO ALBUM">PHOTO ALBUM</option>
                     <option value="NONE">ไม่ใส่</option>
                 </select>
             </div>
@@ -187,6 +188,7 @@
             const hasExistingPrefix = 
                 upperHeadline.startsWith('UPDATE:') || 
                 upperHeadline.startsWith('SHORT NEWS:') || 
+                upperHeadline.startsWith('PHOTO ALBUM:') ||
                 upperHeadline.startsWith('BREAKING:') ||
                 upperHeadline.startsWith('NEWS:');
 
@@ -199,7 +201,11 @@
             result += `${headline}\n\n`;
             result += `เรื่อง: ${author}\n`;
             if (photographer) result += `ภาพ: ${photographer}\n`;
-            if (link) result += `${link}\n`;
+            
+            // นำ Link มาคั่นบรรทัดก่อน Body Text เสมอ
+            if (link) {
+                result += `\n${link}\n`;
+            }
             
             result += `\nBody Text:\n\n`; 
             

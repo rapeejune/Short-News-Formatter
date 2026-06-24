@@ -1,272 +1,319 @@
-import React, { useState, useEffect } from 'react';
-import { Copy, Check, Settings, FileText, ArrowRight, Trash2, BarChart2 } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Auto-Formatter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
 
-export default function App() {
-  const [rawText, setRawText] = useState('');
-  const [formattedText, setFormattedText] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [charCount, setCharCount] = useState({ chars: 0, words: 0 });
-
-  // Settings with LocalStorage persistence
-  const [category, setCategory] = useState(() => localStorage.getItem('news_category') || 'NEWS / POLITICS');
-  const [defaultAuthor, setDefaultAuthor] = useState(() => localStorage.getItem('news_author') || 'THE STANDARD TEAM');
-  const [defaultPrefix, setDefaultPrefix] = useState(() => localStorage.getItem('news_prefix') || 'UPDATE');
-
-  // Save settings to LocalStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('news_category', category);
-    localStorage.setItem('news_author', defaultAuthor);
-    localStorage.setItem('news_prefix', defaultPrefix);
-  }, [category, defaultAuthor, defaultPrefix]);
-
-  useEffect(() => {
-    formatNews();
-  }, [rawText, category, defaultAuthor, defaultPrefix]);
-
-  const formatNews = () => {
-    if (!rawText.trim()) {
-      setFormattedText('');
-      setCharCount({ chars: 0, words: 0 });
-      return;
-    }
-
-    const lines = rawText.split('\n');
-    let headline = '';
-    let author = defaultAuthor;
-    let photographer = '';
-    let link = '';
-    let bodyLines = [];
-
-    let headlineFound = false;
-
-    for (let i = 0; i < lines.length; i++) {
-      let lineTrimmed = lines[i].trim();
-      
-      // Clean up multiple spaces into a single space
-      lineTrimmed = lineTrimmed.replace(/\s{2,}/g, ' ');
-
-      // หาพาดหัว
-      if (!headlineFound && lineTrimmed !== '') {
-        headline = lineTrimmed;
-        headlineFound = true;
-        continue;
-      }
-
-      if (!headlineFound) continue;
-
-      // เช็ก Meta Data
-      if (lineTrimmed.startsWith('เรื่อง:') || lineTrimmed.startsWith('เรื่อง :')) {
-        author = lineTrimmed.replace(/^เรื่อง\s*:/, '').trim();
-      } else if (lineTrimmed.startsWith('ภาพ:') || lineTrimmed.startsWith('ภาพ :')) {
-        photographer = lineTrimmed.replace(/^ภาพ\s*:/, '').trim();
-      } else if (lineTrimmed.startsWith('http://') || lineTrimmed.startsWith('https://')) {
-        link = lineTrimmed;
-      } else {
-        if (lineTrimmed === '' && bodyLines.length === 0) continue;
-        bodyLines.push(lineTrimmed === '' ? '' : lineTrimmed);
-      }
-    }
-
-    // จัดการ Prefix
-    const upperHeadline = headline.toUpperCase();
-    const hasExistingPrefix = 
-      upperHeadline.startsWith('UPDATE:') || 
-      upperHeadline.startsWith('SHORT NEWS:') || 
-      upperHeadline.startsWith('BREAKING:') ||
-      upperHeadline.startsWith('NEWS:');
-
-    if (!hasExistingPrefix && defaultPrefix !== 'NONE') {
-      headline = `${defaultPrefix}: ${headline}`;
-    }
-
-    // ประกอบร่างข้อความ (มีเว้นบรรทัดตามที่ตกลงกันไว้)
-    let result = `${category}\n\n`;
-    result += `${headline}\n\n`;
-    result += `เรื่อง: ${author}\n`;
-    if (photographer) result += `ภาพ: ${photographer}\n`;
-    if (link) result += `${link}\n`;
-    
-    result += `\nBody Text:\n\n`; 
-    
-    // ตัดบรรทัดว่างส่วนท้ายทิ้ง
-    while (bodyLines.length > 0 && bodyLines[bodyLines.length - 1] === '') {
-      bodyLines.pop();
-    }
-    
-    // จัดการเนื้อหา เพิ่มบรรทัดว่างคั่นย่อหน้า
-    let formattedBody = '';
-    for(let i=0; i < bodyLines.length; i++) {
-        const line = bodyLines[i];
-        if(line !== '') {
-            formattedBody += line + '\n\n';
-        }
-    }
-
-    result += formattedBody.trim();
-
-    setFormattedText(result);
-
-    // คำนวณความยาว
-    const words = result.trim().split(/\s+/).filter(word => word.length > 0).length;
-    setCharCount({ chars: result.length, words: words });
-  };
-
-  const handleCopy = () => {
-    if (!formattedText) return;
-
-    const fallbackCopyTextToClipboard = (text) => {
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      textArea.style.top = "0";
-      textArea.style.left = "0";
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
-      try {
-        document.execCommand('copy');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error('Fallback: Oops, unable to copy', err);
-      }
-      
-      document.body.removeChild(textArea);
-    };
-
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(formattedText).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }).catch(() => fallbackCopyTextToClipboard(formattedText));
-    } else {
-      fallbackCopyTextToClipboard(formattedText);
-    }
-  };
-
-  const clearText = () => {
-    if (window.confirm("ต้องการล้างข้อความทั้งหมดใช่หรือไม่?")) {
-      setRawText('');
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div class="max-w-6xl mx-auto space-y-6">
         
-        <header className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-900 flex items-center gap-2">
-              <FileText className="text-blue-600" />
-              News Auto-Formatter
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">วางข้อความดิบจาก Line ระบบจะจัดฟอร์แมตให้พร้อมลงเว็บทันที</p>
-          </div>
-          <div className="hidden md:flex gap-2">
-            <button onClick={() => setRawText("ประวิตรคัมแบ็กห้องประชุมสภา... \nภาพ: ฐานิส สุดโต")} className="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition">เทสต์ 1</button>
-          </div>
+        <!-- Header -->
+        <header class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-blue-900 flex items-center gap-2">
+                    <i data-lucide="file-text" class="text-blue-600"></i>
+                    News Auto-Formatter
+                </h1>
+                <p class="text-gray-500 text-sm mt-1">วางข้อความดิบจาก Line ระบบจะจัดฟอร์แมตให้พร้อมลงเว็บทันที</p>
+            </div>
+            <div class="hidden md:flex gap-2">
+                <button id="btn-test1" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition">
+                    เทสต์ 1
+                </button>
+            </div>
         </header>
 
-        {/* Settings Bar */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
-          <Settings size={18} className="text-gray-400" />
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">หมวดหมู่:</label>
-            <input 
-              type="text" 
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-40"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">พาดหัวเริ่ม:</label>
-            <select 
-              value={defaultPrefix}
-              onChange={(e) => setDefaultPrefix(e.target.value)}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="UPDATE">UPDATE</option>
-              <option value="SHORT NEWS">SHORT NEWS</option>
-              <option value="NONE">ไม่ใส่</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600">ผู้เขียน:</label>
-            <input 
-              type="text" 
-              value={defaultAuthor}
-              onChange={(e) => setDefaultAuthor(e.target.value)}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-48"
-            />
-          </div>
+        <!-- Settings Bar -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+            <i data-lucide="settings" class="text-gray-400 w-5 h-5"></i>
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-600">หมวดหมู่:</label>
+                <input type="text" id="input-category" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-40">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-600">พาดหัวเริ่ม:</label>
+                <select id="select-prefix" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="SHORT NEWS">SHORT NEWS</option>
+                    <option value="NONE">ไม่ใส่</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-600">ผู้เขียน:</label>
+                <input type="text" id="input-author" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-48">
+            </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Input Area */}
-          <div className="flex flex-col h-full space-y-2">
-            <label className="font-semibold text-gray-700 flex justify-between items-end">
-              <span>ข้อความต้นฉบับ (Raw Text)</span>
-              {rawText && (
-                <button onClick={clearText} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-                  <Trash2 size={14} /> ล้างข้อมูล
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Input Area -->
+            <div class="flex flex-col h-full space-y-2">
+                <label class="font-semibold text-gray-700 flex justify-between items-end">
+                    <span>ข้อความต้นฉบับ (Raw Text)</span>
+                    <button id="btn-clear" class="hidden text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ล้างข้อมูล
+                    </button>
+                </label>
+                <textarea id="text-raw" placeholder="วางข้อความที่นี่..." class="flex-1 min-h-[400px] w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none shadow-inner text-sm leading-relaxed"></textarea>
+            </div>
+
+            <!-- Output Area -->
+            <div class="flex flex-col h-full space-y-2 relative">
+                <label class="font-semibold text-gray-700 flex justify-between items-end">
+                    <span class="flex items-center gap-2 text-blue-700">
+                        ผลลัพธ์พร้อมใช้งาน <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </span>
+                    <span class="text-xs text-gray-500 flex items-center gap-1 font-normal bg-gray-100 px-2 py-1 rounded">
+                        <i data-lucide="bar-chart-2" class="w-3 h-3"></i> 
+                        <span id="char-count">0 อักษร / 0 คำ</span>
+                    </span>
+                </label>
+                <textarea id="text-formatted" readonly placeholder="ข้อความที่จัดฟอร์แมตแล้วจะแสดงที่นี่..." class="flex-1 min-h-[400px] w-full p-4 bg-gray-900 text-gray-100 rounded-xl outline-none resize-none shadow-lg font-mono text-sm leading-relaxed pb-16"></textarea>
+                
+                <button id="btn-copy" disabled class="absolute bottom-6 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-gray-700 text-gray-500 cursor-not-allowed">
+                    <i data-lucide="copy" id="icon-copy" class="w-4 h-4"></i>
+                    <i data-lucide="check" id="icon-check" class="w-4 h-4 hidden"></i>
+                    <span id="text-copy-status">คัดลอก (Copy)</span>
                 </button>
-              )}
-            </label>
-            <textarea
-              value={rawText}
-              onChange={(e) => setRawText(e.target.value)}
-              placeholder="วางข้อความที่นี่..."
-              className="flex-1 min-h-[400px] w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none shadow-inner text-sm leading-relaxed"
-            />
-          </div>
-
-          {/* Output Area */}
-          <div className="flex flex-col h-full space-y-2 relative">
-             <label className="font-semibold text-gray-700 flex justify-between items-end">
-              <span className="flex items-center gap-2 text-blue-700">
-                 ผลลัพธ์พร้อมใช้งาน <ArrowRight size={16} />
-              </span>
-              <span className="text-xs text-gray-500 flex items-center gap-1 font-normal bg-gray-100 px-2 py-1 rounded">
-                <BarChart2 size={12} /> {charCount.chars.toLocaleString()} อักษร / {charCount.words.toLocaleString()} คำ
-              </span>
-            </label>
-            <textarea
-              readOnly
-              value={formattedText}
-              placeholder="ข้อความที่จัดฟอร์แมตแล้วจะแสดงที่นี่..."
-              className="flex-1 min-h-[400px] w-full p-4 bg-gray-900 text-gray-100 rounded-xl outline-none resize-none shadow-lg font-mono text-sm leading-relaxed pb-16"
-            />
+            </div>
             
-            <button
-              onClick={handleCopy}
-              disabled={!formattedText}
-              className={`absolute bottom-6 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md ${
-                !formattedText 
-                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
-                  : copied 
-                    ? 'bg-green-500 text-white hover:bg-green-600' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              {copied ? <Check size={18} /> : <Copy size={18} />}
-              {copied ? 'คัดลอกแล้ว!' : 'คัดลอก (Copy)'}
-            </button>
-          </div>
-          
-          {/* Hint Message */}
-          <div className="col-span-1 md:col-span-2 text-right">
-            <p className="text-sm text-gray-500">
-              💡 <span className="font-semibold">ทริค:</span> ถ้านำไปวางในเว็บแล้วติดตัวหนา แนะนำให้กด <kbd className="bg-gray-200 border border-gray-300 rounded px-1.5 py-0.5 text-xs text-gray-700">Ctrl/Cmd + Shift + V</kbd> เพื่อวางแบบล้างฟอร์แมต
-            </p>
-          </div>
-
+            <!-- Hint Message -->
+            <div class="col-span-1 md:col-span-2 text-right">
+                <p class="text-sm text-gray-500">
+                    💡 <span class="font-semibold">ทริค:</span> ถ้านำไปวางในเว็บแล้วติดตัวหนา แนะนำให้กด <kbd class="bg-gray-200 border border-gray-300 rounded px-1.5 py-0.5 text-xs text-gray-700">Ctrl/Cmd + Shift + V</kbd> เพื่อวางแบบล้างฟอร์แมต
+                </p>
+            </div>
         </div>
 
-      </div>
     </div>
-  );
-}
+
+    <!-- JavaScript Logic -->
+    <script>
+        // DOM Elements
+        const elRaw = document.getElementById('text-raw');
+        const elFormatted = document.getElementById('text-formatted');
+        const elCategory = document.getElementById('input-category');
+        const elPrefix = document.getElementById('select-prefix');
+        const elAuthor = document.getElementById('input-author');
+        const btnClear = document.getElementById('btn-clear');
+        const btnCopy = document.getElementById('btn-copy');
+        const btnTest1 = document.getElementById('btn-test1');
+        const charCountText = document.getElementById('char-count');
+        const iconCopy = document.getElementById('icon-copy');
+        const iconCheck = document.getElementById('icon-check');
+        const textCopyStatus = document.getElementById('text-copy-status');
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Load settings from LocalStorage
+        const loadSettings = () => {
+            elCategory.value = localStorage.getItem('news_category') || 'NEWS / POLITICS';
+            elAuthor.value = localStorage.getItem('news_author') || 'THE STANDARD TEAM';
+            elPrefix.value = localStorage.getItem('news_prefix') || 'UPDATE';
+        };
+
+        // Save settings to LocalStorage
+        const saveSettings = () => {
+            localStorage.setItem('news_category', elCategory.value);
+            localStorage.setItem('news_author', elAuthor.value);
+            localStorage.setItem('news_prefix', elPrefix.value);
+            formatNews();
+        };
+
+        const updateClearBtn = () => {
+            if (elRaw.value.trim().length > 0) {
+                btnClear.classList.remove('hidden');
+            } else {
+                btnClear.classList.add('hidden');
+            }
+        };
+
+        // Main Formatter Function
+        const formatNews = () => {
+            const rawText = elRaw.value;
+
+            if (!rawText.trim()) {
+                elFormatted.value = '';
+                charCountText.innerText = `0 อักษร / 0 คำ`;
+                btnCopy.disabled = true;
+                btnCopy.className = 'absolute bottom-6 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-gray-700 text-gray-500 cursor-not-allowed';
+                return;
+            }
+
+            const lines = rawText.split('\n');
+            let headline = '';
+            let author = elAuthor.value;
+            let photographer = '';
+            let link = '';
+            let bodyLines = [];
+            let headlineFound = false;
+
+            for (let i = 0; i < lines.length; i++) {
+                let lineTrimmed = lines[i].trim();
+                
+                // Clean up multiple spaces
+                lineTrimmed = lineTrimmed.replace(/\s{2,}/g, ' ');
+
+                // หาพาดหัว
+                if (!headlineFound && lineTrimmed !== '') {
+                    headline = lineTrimmed;
+                    headlineFound = true;
+                    continue;
+                }
+
+                if (!headlineFound) continue;
+
+                // เช็ก Meta Data
+                if (lineTrimmed.startsWith('เรื่อง:') || lineTrimmed.startsWith('เรื่อง :')) {
+                    author = lineTrimmed.replace(/^เรื่อง\s*:/, '').trim();
+                } else if (lineTrimmed.startsWith('ภาพ:') || lineTrimmed.startsWith('ภาพ :')) {
+                    photographer = lineTrimmed.replace(/^ภาพ\s*:/, '').trim();
+                } else if (lineTrimmed.startsWith('http://') || lineTrimmed.startsWith('https://')) {
+                    link = lineTrimmed;
+                } else {
+                    if (lineTrimmed === '' && bodyLines.length === 0) continue;
+                    bodyLines.push(lineTrimmed === '' ? '' : lineTrimmed);
+                }
+            }
+
+            // จัดการ Prefix
+            const upperHeadline = headline.toUpperCase();
+            const hasExistingPrefix = 
+                upperHeadline.startsWith('UPDATE:') || 
+                upperHeadline.startsWith('SHORT NEWS:') || 
+                upperHeadline.startsWith('BREAKING:') ||
+                upperHeadline.startsWith('NEWS:');
+
+            if (!hasExistingPrefix && elPrefix.value !== 'NONE') {
+                headline = `${elPrefix.value}: ${headline}`;
+            }
+
+            // ประกอบร่างข้อความ
+            let result = `${elCategory.value}\n\n`;
+            result += `${headline}\n\n`;
+            result += `เรื่อง: ${author}\n`;
+            if (photographer) result += `ภาพ: ${photographer}\n`;
+            if (link) result += `${link}\n`;
+            
+            result += `\nBody Text:\n\n`; 
+            
+            // ตัดบรรทัดว่างส่วนท้ายทิ้ง
+            while (bodyLines.length > 0 && bodyLines[bodyLines.length - 1] === '') {
+                bodyLines.pop();
+            }
+            
+            // จัดการเนื้อหา เพิ่มบรรทัดว่างคั่นย่อหน้า
+            let formattedBody = '';
+            for(let i=0; i < bodyLines.length; i++) {
+                const line = bodyLines[i];
+                if(line !== '') {
+                    formattedBody += line + '\n\n';
+                }
+            }
+
+            result += formattedBody.trim();
+
+            // Set result
+            elFormatted.value = result;
+
+            // Enable copy button
+            btnCopy.disabled = false;
+            btnCopy.className = 'absolute bottom-6 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-blue-600 text-white hover:bg-blue-700';
+
+            // Calculate length
+            const chars = result.length;
+            const words = result.trim().split(/\s+/).filter(word => word.length > 0).length;
+            charCountText.innerText = `${chars.toLocaleString()} อักษร / ${words.toLocaleString()} คำ`;
+        };
+
+        // Copy Function
+        const handleCopy = () => {
+            if (!elFormatted.value) return;
+
+            const setCopiedState = () => {
+                iconCopy.classList.add('hidden');
+                iconCheck.classList.remove('hidden');
+                textCopyStatus.innerText = 'คัดลอกแล้ว!';
+                btnCopy.classList.replace('bg-blue-600', 'bg-green-500');
+                btnCopy.classList.replace('hover:bg-blue-700', 'hover:bg-green-600');
+
+                setTimeout(() => {
+                    iconCheck.classList.add('hidden');
+                    iconCopy.classList.remove('hidden');
+                    textCopyStatus.innerText = 'คัดลอก (Copy)';
+                    btnCopy.classList.replace('bg-green-500', 'bg-blue-600');
+                    btnCopy.classList.replace('hover:bg-green-600', 'hover:bg-blue-700');
+                }, 2000);
+            };
+
+            const fallbackCopy = (text) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+                textArea.style.opacity = "0";
+                
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    document.execCommand('copy');
+                    setCopiedState();
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+                
+                document.body.removeChild(textArea);
+            };
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(elFormatted.value)
+                    .then(setCopiedState)
+                    .catch(() => fallbackCopy(elFormatted.value));
+            } else {
+                fallbackCopy(elFormatted.value);
+            }
+        };
+
+        // Event Listeners
+        elCategory.addEventListener('input', saveSettings);
+        elAuthor.addEventListener('input', saveSettings);
+        elPrefix.addEventListener('change', saveSettings);
+        
+        elRaw.addEventListener('input', () => {
+            updateClearBtn();
+            formatNews();
+        });
+
+        btnClear.addEventListener('click', () => {
+            if (confirm("ต้องการล้างข้อความทั้งหมดใช่หรือไม่?")) {
+                elRaw.value = '';
+                updateClearBtn();
+                formatNews();
+            }
+        });
+
+        btnCopy.addEventListener('click', handleCopy);
+
+        btnTest1.addEventListener('click', () => {
+            elRaw.value = "ประวิตรคัมแบ็กห้องประชุมสภา ในรอบ 1 ปี 8 เดือน อภิปรายจัดหนักซักฟอกรัฐบาล\nวันนี้ (24 มีนาคม) เวลา 09.05 น. พล.อ.ประวิตร วงษ์สุวรรณ สส.บัญชีรายชื่อ เข้าปฏิบัติหน้าที่ผู้แทนราษฎรร่วมประชุมสภาภายในห้องประชุมสุริยัน เป็นครั้งแรกในรอบ 1 ปี 8 เดือน\nภาพ: ฐานิส สุดโต";
+            updateClearBtn();
+            formatNews();
+        });
+
+        // Initialize
+        loadSettings();
+        formatNews();
+        updateClearBtn();
+
+    </script>
+</body>
+</html>

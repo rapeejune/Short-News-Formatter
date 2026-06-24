@@ -26,9 +26,6 @@
                 <button id="btn-clear-all" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1 rounded-full transition flex items-center gap-1">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ล้างหน้าจอ
                 </button>
-                <button id="btn-test1" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition">
-                    เทสต์ 1
-                </button>
             </div>
         </header>
 
@@ -101,9 +98,8 @@
         const elCategory = document.getElementById('input-category');
         const elPrefix = document.getElementById('select-prefix');
         const elAuthor = document.getElementById('input-author');
-        const btnClearAll = document.getElementById('btn-clear-all');
         const btnCopy = document.getElementById('btn-copy');
-        const btnTest1 = document.getElementById('btn-test1');
+        const btnClearAll = document.getElementById('btn-clear-all');
         const charCountText = document.getElementById('char-count');
         const iconCopy = document.getElementById('icon-copy');
         const iconCheck = document.getElementById('icon-check');
@@ -150,6 +146,11 @@
             for (let i = 0; i < lines.length; i++) {
                 let lineTrimmed = lines[i].trim();
                 
+                // ลบจุดที่ใช้คั่นบรรทัด
+                if (lineTrimmed === '.') {
+                    continue;
+                }
+
                 // Clean up multiple spaces
                 lineTrimmed = lineTrimmed.replace(/\s{2,}/g, ' ');
 
@@ -289,7 +290,7 @@
         elRaw.addEventListener('input', () => {
             formatNews();
         });
-
+        
         btnClearAll.addEventListener('click', () => {
             if (confirm("ต้องการล้างข้อความบนหน้าจอทั้งหมดใช่หรือไม่?")) {
                 elRaw.value = '';
@@ -298,12 +299,6 @@
         });
 
         btnCopy.addEventListener('click', handleCopy);
-
-        btnTest1.addEventListener('click', () => {
-            elRaw.value = "ประวิตรคัมแบ็กห้องประชุมสภา ในรอบ 1 ปี 8 เดือน อภิปรายจัดหนักซักฟอกรัฐบาล\nวันนี้ (24 มีนาคม) เวลา 09.05 น. พล.อ.ประวิตร วงษ์สุวรรณ สส.บัญชีรายชื่อ เข้าปฏิบัติหน้าที่ผู้แทนราษฎรร่วมประชุมสภาภายในห้องประชุมสุริยัน เป็นครั้งแรกในรอบ 1 ปี 8 เดือน\nภาพ: ฐานิส สุดโต";
-            updateClearBtn();
-            formatNews();
-        });
 
         // Initialize
         loadSettings();

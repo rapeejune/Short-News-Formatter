@@ -23,6 +23,9 @@
                 <p class="text-gray-500 text-sm mt-1">วางข้อความดิบจาก Line ระบบจะจัดฟอร์แมตให้พร้อมลงเว็บทันที</p>
             </div>
             <div class="hidden md:flex gap-2">
+                <button id="btn-clear-all" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1 rounded-full transition flex items-center gap-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ล้างหน้าจอ
+                </button>
                 <button id="btn-test1" class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full transition">
                     เทสต์ 1
                 </button>
@@ -56,9 +59,6 @@
             <div class="flex flex-col h-full space-y-2">
                 <label class="font-semibold text-gray-700 flex justify-between items-end">
                     <span>ข้อความต้นฉบับ (Raw Text)</span>
-                    <button id="btn-clear" class="hidden text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ล้างข้อมูล
-                    </button>
                 </label>
                 <textarea id="text-raw" placeholder="วางข้อความที่นี่..." class="flex-1 min-h-[400px] w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none shadow-inner text-sm leading-relaxed"></textarea>
             </div>
@@ -101,7 +101,7 @@
         const elCategory = document.getElementById('input-category');
         const elPrefix = document.getElementById('select-prefix');
         const elAuthor = document.getElementById('input-author');
-        const btnClear = document.getElementById('btn-clear');
+        const btnClearAll = document.getElementById('btn-clear-all');
         const btnCopy = document.getElementById('btn-copy');
         const btnTest1 = document.getElementById('btn-test1');
         const charCountText = document.getElementById('char-count');
@@ -127,14 +127,6 @@
             formatNews();
         };
 
-        const updateClearBtn = () => {
-            if (elRaw.value.trim().length > 0) {
-                btnClear.classList.remove('hidden');
-            } else {
-                btnClear.classList.add('hidden');
-            }
-        };
-
         // Main Formatter Function
         const formatNews = () => {
             const rawText = elRaw.value;
@@ -151,7 +143,7 @@
             let headline = '';
             let author = elAuthor.value;
             let photographer = '';
-            let link = '';
+            let links = [];
             let bodyLines = [];
             let headlineFound = false;
 
@@ -176,7 +168,7 @@
                 } else if (lineTrimmed.startsWith('ภาพ:') || lineTrimmed.startsWith('ภาพ :')) {
                     photographer = lineTrimmed.replace(/^ภาพ\s*:/, '').trim();
                 } else if (lineTrimmed.startsWith('http://') || lineTrimmed.startsWith('https://')) {
-                    link = lineTrimmed;
+                    links.push(lineTrimmed);
                 } else {
                     if (lineTrimmed === '' && bodyLines.length === 0) continue;
                     bodyLines.push(lineTrimmed === '' ? '' : lineTrimmed);
@@ -203,8 +195,8 @@
             if (photographer) result += `ภาพ: ${photographer}\n`;
             
             // นำ Link มาคั่นบรรทัดก่อน Body Text เสมอ
-            if (link) {
-                result += `\n${link}\n`;
+            if (links.length > 0) {
+                result += `\n${links.join('\n')}\n`;
             }
             
             result += `\nBody Text:\n\n`; 
@@ -295,14 +287,12 @@
         elPrefix.addEventListener('change', saveSettings);
         
         elRaw.addEventListener('input', () => {
-            updateClearBtn();
             formatNews();
         });
 
-        btnClear.addEventListener('click', () => {
-            if (confirm("ต้องการล้างข้อความทั้งหมดใช่หรือไม่?")) {
+        btnClearAll.addEventListener('click', () => {
+            if (confirm("ต้องการล้างข้อความบนหน้าจอทั้งหมดใช่หรือไม่?")) {
                 elRaw.value = '';
-                updateClearBtn();
                 formatNews();
             }
         });
@@ -318,7 +308,6 @@
         // Initialize
         loadSettings();
         formatNews();
-        updateClearBtn();
 
     </script>
 </body>

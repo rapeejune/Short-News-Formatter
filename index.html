@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News Auto-Formatter</title>
+    <!-- เพิ่ม Favicon รูปไอคอน (สามารถเปลี่ยน href เป็น URL รูปโลโก้เว็บของจริงได้) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -34,7 +36,10 @@
             <i data-lucide="settings" class="text-gray-400 w-5 h-5"></i>
             <div class="flex items-center gap-2">
                 <label class="text-sm font-medium text-gray-600">หมวดหมู่:</label>
-                <input type="text" id="input-category" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-40">
+                <select id="input-category" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-48">
+                    <option value="NEWS / POLITICS">NEWS / POLITICS</option>
+                    <option value="NEWS / THAILAND">NEWS / THAILAND</option>
+                </select>
             </div>
             <div class="flex items-center gap-2">
                 <label class="text-sm font-medium text-gray-600">พาดหัวเริ่ม:</label>
@@ -283,7 +288,7 @@
         };
 
         // Event Listeners
-        elCategory.addEventListener('input', saveSettings);
+        elCategory.addEventListener('change', saveSettings);
         elAuthor.addEventListener('input', saveSettings);
         elPrefix.addEventListener('change', saveSettings);
         

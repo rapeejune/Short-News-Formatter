@@ -198,8 +198,9 @@
                     continue;
                 }
 
-                // ข้ามคำสั่งแทรกภาพ (เช่น **แทรกภาพ** หรือ [📷 รูปที่...])
-                if (lineTrimmed === '**แทรกภาพ**' || (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'))) {
+                // ข้ามคำสั่งแทรกภาพ (เช่น **แทรกภาพ**, แทรกรูป หรือ [📷 รูปที่...])
+                let lineNoStars = lineTrimmed.replace(/\*/g, '').trim();
+                if (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป' || (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'))) {
                     continue;
                 }
 

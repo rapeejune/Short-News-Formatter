@@ -147,6 +147,7 @@
             let links = [];
             let bodyLines = [];
             let headlineFound = false;
+            let inBody = false;
 
             for (let i = 0; i < lines.length; i++) {
                 let lineTrimmed = lines[i].trim();
@@ -168,17 +169,68 @@
 
                 if (!headlineFound) continue;
 
-                // เช็ก Meta Data
-                if (lineTrimmed.startsWith('เรื่อง:') || lineTrimmed.startsWith('เรื่อง :')) {
+                // เช็ก Meta Data (ทำงานเฉพาะตอนยังไม่เข้า Body Text)
+                if (!inBody && (lineTrimmed.startsWith('เรื่อง:') || lineTrimmed.startsWith('เรื่อง :'))) {
                     author = lineTrimmed.replace(/^เรื่อง\s*:/, '').trim();
-                } else if (lineTrimmed.startsWith('ภาพ:') || lineTrimmed.startsWith('ภาพ :')) {
+                    continue;
+                } 
+                if (!inBody && (lineTrimmed.startsWith('ภาพ:') || lineTrimmed.startsWith('ภาพ :'))) {
                     photographer = lineTrimmed.replace(/^ภาพ\s*:/, '').trim();
-                } else if (lineTrimmed.startsWith('http://') || lineTrimmed.startsWith('https://')) {
+                    continue;
+                } 
+                
+                // เช็กลิงก์
+                let plainText = lineTrimmed.replace(/\*/g, '').trim();
+                let isUrl = plainText.startsWith('http://') || plainText.startsWith('https://');
+
+                if (!inBody && isUrl) {
                     links.push(lineTrimmed);
-                } else {
-                    if (lineTrimmed === '' && bodyLines.length === 0) continue;
-                    bodyLines.push(lineTrimmed === '' ? '' : lineTrimmed);
+                    continue;
                 }
+
+                // ถ้าไม่ใช่ Meta Data หรือ Top Link ถือว่าเข้าสู่ Body Text แล้ว
+                if (lineTrimmed === '' && bodyLines.length === 0) continue;
+                
+                inBody = true; // ล็อกว่าเข้า Body แล้ว
+
+                if (lineTrimmed === '') {
+                    bodyLines.push('');
+                    continue;
+                }
+
+                // ข้ามคำสั่งแทรกภาพ (เช่น **แทรกภาพ** หรือ [📷 รูปที่...])
+                if (lineTrimmed === '**แทรกภาพ**' || (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'))) {
+                    continue;
+                }
+
+                // จัดการลิงก์ใน Body ให้เป็น .imgX
+                if (isUrl) {
+                    let prevLine = '';
+                    // หาบรรทัดก่อนหน้าที่ไม่ใช่บรรทัดว่าง
+                    for (let j = bodyLines.length - 1; j >= 0; j--) {
+                        if (bodyLines[j] !== '') {
+                            prevLine = bodyLines[j];
+                            break;
+                        }
+                    }
+
+                    let imgCounter = 1;
+                    // ถ้าบรรทัดก่อนหน้าเป็น .imgX อยู่แล้ว ให้นับเลขต่อ
+                    let match = prevLine.match(/^\.img(\d+)$/);
+                    if (match) {
+                        imgCounter = parseInt(match[1]) + 1;
+                    }
+
+                    bodyLines.push(`.img${imgCounter}`);
+                    continue;
+                }
+
+                // จัดการ Heading (เริ่มและจบด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
+                if (lineTrimmed.startsWith('**') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('**ภาพ:**')) {
+                    lineTrimmed = '## ' + lineTrimmed;
+                }
+
+                bodyLines.push(lineTrimmed);
             }
 
             // จัดการ Prefix

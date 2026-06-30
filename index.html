@@ -149,6 +149,32 @@
             let headlineFound = false;
             let inBody = false;
 
+            // ตัวแปรสำหรับจัดการกลุ่มรูปภาพ (Image Block)
+            let imgBlockLinks = 0;
+            let imgBlockHasMarker = false;
+            let imgBlockActive = false;
+
+            // ฟังก์ชันยุบรวมกลุ่มรูปภาพ
+            const resolveImageBlock = () => {
+                if (!imgBlockActive) return;
+                
+                // ถ้ามีลิงก์ จะพิมพ์ .img1, .img2 ตามจำนวนลิงก์
+                if (imgBlockLinks > 0) {
+                    for (let k = 1; k <= imgBlockLinks; k++) {
+                        bodyLines.push(`.img${k}`);
+                    }
+                } 
+                // ถ้าไม่มีลิงก์ แต่มีคำว่า [📷 รูปที่ X] ให้พิมพ์ .img1
+                else if (imgBlockHasMarker) {
+                    bodyLines.push(`.img1`);
+                }
+                
+                // รีเซ็ตค่าเพื่อเตรียมรับรูปถัดไป
+                imgBlockActive = false;
+                imgBlockLinks = 0;
+                imgBlockHasMarker = false;
+            };
+
             for (let i = 0; i < lines.length; i++) {
                 let lineTrimmed = lines[i].trim();
                 
@@ -179,10 +205,10 @@
                     continue;
                 } 
                 
-                // เช็กลิงก์
                 let plainText = lineTrimmed.replace(/\*/g, '').trim();
                 let isUrl = plainText.startsWith('http://') || plainText.startsWith('https://');
 
+                // เช็กลิงก์หน้าปก (Top link)
                 if (!inBody && isUrl) {
                     links.push(lineTrimmed);
                     continue;
@@ -193,37 +219,26 @@
                 
                 inBody = true; // ล็อกว่าเข้า Body แล้ว
 
+                // --- เช็กว่าเป็นส่วนหนึ่งของการแทรกรูปหรือไม่ ---
+                let lineNoStars = plainText;
+                let isPlaceholderText = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป');
+                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
+
+                if (isPlaceholderText || isPicMarker || isUrl) {
+                    imgBlockActive = true;
+                    if (isPicMarker) imgBlockHasMarker = true;
+                    if (isUrl) imgBlockLinks++;
+                    continue;
+                }
+
                 if (lineTrimmed === '') {
                     bodyLines.push('');
                     continue;
                 }
 
-                // ข้ามคำสั่งแทรกภาพ (เช่น **แทรกภาพ**, แทรกรูป หรือ [📷 รูปที่...])
-                let lineNoStars = lineTrimmed.replace(/\*/g, '').trim();
-                if (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป' || (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'))) {
-                    continue;
-                }
-
-                // จัดการลิงก์ใน Body ให้เป็น .imgX
-                if (isUrl) {
-                    let prevLine = '';
-                    // หาบรรทัดก่อนหน้าที่ไม่ใช่บรรทัดว่าง
-                    for (let j = bodyLines.length - 1; j >= 0; j--) {
-                        if (bodyLines[j] !== '') {
-                            prevLine = bodyLines[j];
-                            break;
-                        }
-                    }
-
-                    let imgCounter = 1;
-                    // ถ้าบรรทัดก่อนหน้าเป็น .imgX อยู่แล้ว ให้นับเลขต่อ
-                    let match = prevLine.match(/^\.img(\d+)$/);
-                    if (match) {
-                        imgCounter = parseInt(match[1]) + 1;
-                    }
-
-                    bodyLines.push(`.img${imgCounter}`);
-                    continue;
+                // เมื่อเจอข้อความปกติ จะเคลียร์รูปที่ค้างไว้ออกมาเป็น .img1
+                if (imgBlockActive) {
+                    resolveImageBlock();
                 }
 
                 // จัดการ Heading (เริ่มและจบด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
@@ -234,7 +249,12 @@
                 bodyLines.push(lineTrimmed);
             }
 
-            // จัดการ Prefix
+            // ถ้ามีคำสั่งแทรกรูปค้างอยู่บรรทัดสุดท้าย ให้เคลียร์ออกมาด้วย
+            if (imgBlockActive) {
+                resolveImageBlock();
+            }
+
+            // จัดการ Prefix พาดหัว
             const upperHeadline = headline.toUpperCase();
             const hasExistingPrefix = 
                 upperHeadline.startsWith('UPDATE:') || 
@@ -247,13 +267,13 @@
                 headline = `${elPrefix.value}: ${headline}`;
             }
 
-            // ประกอบร่างข้อความ
+            // ประกอบร่างข้อความทั้งหมด
             let result = `${elCategory.value}\n\n`;
             result += `${headline}\n\n`;
             result += `เรื่อง: ${author}\n`;
             if (photographer) result += `ภาพ: ${photographer}\n`;
             
-            // นำ Link มาคั่นบรรทัดก่อน Body Text เสมอ
+            // นำ Link หน้าปกมาคั่นบรรทัดก่อน Body Text เสมอ
             if (links.length > 0) {
                 result += `\n${links.join('\n')}\n`;
             }
@@ -276,7 +296,7 @@
 
             result += formattedBody.trim();
 
-            // Set result
+            // นำไปแสดงผล
             elFormatted.value = result;
 
             // Enable copy button

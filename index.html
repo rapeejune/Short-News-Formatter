@@ -241,8 +241,9 @@
                     resolveImageBlock();
                 }
 
-                // จัดการ Heading (เริ่มและจบด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
-                if (lineTrimmed.startsWith('**') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('**ภาพ:**')) {
+                // จัดการ Heading (เริ่มด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
+                // ปรับให้จับทุกบรรทัดที่ขึ้นต้นด้วย ** แม้จะลืมใส่ ** ปิดท้ายก็ตาม
+                if (lineTrimmed.startsWith('**') && !lineTrimmed.replace(/\s/g, '').startsWith('**ภาพ')) {
                     lineTrimmed = '## ' + lineTrimmed;
                 }
 

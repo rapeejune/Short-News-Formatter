@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News Auto-Formatter</title>
-    <!-- เพิ่ม Favicon รูปไอคอน (สามารถเปลี่ยน href เป็น URL รูปโลโก้เว็บของจริงได้) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -31,8 +28,18 @@
             </div>
         </header>
 
+        <!-- Tabs -->
+        <div class="flex space-x-1 bg-gray-200/50 p-1 rounded-lg w-max">
+            <button id="tab-full" class="px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-700 transition-all">
+                ฟอร์แมตลงเว็บ (เต็มรูปแบบ)
+            </button>
+            <button id="tab-content" class="px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all">
+                จัดเฉพาะเนื้อหา (Content Only)
+            </button>
+        </div>
+
         <!-- Settings Bar -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
+        <div id="settings-bar" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center transition-all">
             <i data-lucide="settings" class="text-gray-400 w-5 h-5"></i>
             <div class="flex items-center gap-2">
                 <label class="text-sm font-medium text-gray-600">หมวดหมู่:</label>
@@ -109,6 +116,13 @@
         const iconCopy = document.getElementById('icon-copy');
         const iconCheck = document.getElementById('icon-check');
         const textCopyStatus = document.getElementById('text-copy-status');
+        
+        // Tabs
+        const tabFull = document.getElementById('tab-full');
+        const tabContent = document.getElementById('tab-content');
+        const settingsBar = document.getElementById('settings-bar');
+
+        let currentMode = 'full'; // 'full' or 'content'
 
         // Initialize Lucide Icons
         lucide.createIcons();
@@ -125,6 +139,23 @@
             localStorage.setItem('news_category', elCategory.value);
             localStorage.setItem('news_author', elAuthor.value);
             localStorage.setItem('news_prefix', elPrefix.value);
+            formatNews();
+        };
+
+        // Switch Tabs
+        const switchTab = (mode) => {
+            currentMode = mode;
+            if (mode === 'full') {
+                tabFull.className = "px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-700 transition-all";
+                tabContent.className = "px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all";
+                settingsBar.classList.remove('hidden');
+                settingsBar.classList.add('flex');
+            } else {
+                tabContent.className = "px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-700 transition-all";
+                tabFull.className = "px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all";
+                settingsBar.classList.add('hidden');
+                settingsBar.classList.remove('flex');
+            }
             formatNews();
         };
 
@@ -151,42 +182,35 @@
 
             // ตัวแปรสำหรับจัดการกลุ่มรูปภาพ (Image Block)
             let imgBlockLinks = 0;
-            let imgBlockMarkers = 0;
+            let imgBlockHasMarker = false;
             let imgBlockActive = false;
 
             // ฟังก์ชันยุบรวมกลุ่มรูปภาพ
             const resolveImageBlock = () => {
                 if (!imgBlockActive) return;
                 
-                // ถ้ามีลิงก์ จะพิมพ์ .img1, .img2 ตามจำนวนลิงก์
                 if (imgBlockLinks > 0) {
                     for (let k = 1; k <= imgBlockLinks; k++) {
                         bodyLines.push(`.img${k}`);
                     }
-                } 
-                // ถ้าไม่มีลิงก์ แต่มี marker (เช่น [📷 รูปที่ X]) ให้พิมพ์ .img1 ซ้ำตามจำนวน
-                else if (imgBlockMarkers > 0) {
-                    for (let k = 1; k <= imgBlockMarkers; k++) {
-                        bodyLines.push(`.img1`);
-                    }
+                } else if (imgBlockHasMarker) {
+                    bodyLines.push(`.img1`);
                 }
                 
-                // รีเซ็ตค่าเพื่อเตรียมรับรูปถัดไป
                 imgBlockActive = false;
                 imgBlockLinks = 0;
-                imgBlockMarkers = 0;
+                imgBlockHasMarker = false;
             };
 
             for (let i = 0; i < lines.length; i++) {
                 let lineTrimmed = lines[i].trim();
                 
-                // ลบจุดที่ใช้คั่นบรรทัด
+                // 1. ลบจุดที่ใช้คั่นบรรทัด
                 if (lineTrimmed === '.') {
                     continue;
                 }
 
-                // ตัดบรรทัดที่เป็นชื่อไฟล์ภาพ (.jpg, .jpeg, .png, .webp, .gif) ออก
-                // โดยต้องไม่ขึ้นต้นด้วย http เพื่อป้องกันการลบลิงก์ภาพ
+                // 2. ลบไฟล์ขยะประเภทรูปภาพ (ถ้าไม่ใช่ลิงก์)
                 if (/\.(jpg|jpeg|png|webp|gif)$/i.test(lineTrimmed) && !lineTrimmed.startsWith('http')) {
                     continue;
                 }
@@ -227,19 +251,14 @@
                 
                 inBody = true; // ล็อกว่าเข้า Body แล้ว
 
+                // --- เช็กว่าเป็นส่วนหนึ่งของการแทรกรูปหรือไม่ ---
                 let lineNoStars = plainText;
                 let isPlaceholderText = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป');
-                let isPicMarker = (lineNoStars.includes('[') && lineNoStars.includes('รูปที่'));
+                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
 
-                // ตัดคำว่า แทรกภาพ หรือ แทรกรูป ทิ้งเสมอ
-                if (isPlaceholderText) {
-                    continue;
-                }
-
-                // --- เช็กว่าเป็นส่วนหนึ่งของการแทรกรูปหรือไม่ ---
-                if (isPicMarker || isUrl) {
+                if (isPlaceholderText || isPicMarker || isUrl) {
                     imgBlockActive = true;
-                    if (isPicMarker) imgBlockMarkers++;
+                    if (isPicMarker) imgBlockHasMarker = true;
                     if (isUrl) imgBlockLinks++;
                     continue;
                 }
@@ -249,25 +268,16 @@
                     continue;
                 }
 
-                // เมื่อเจอข้อความปกติ จะเคลียร์รูปที่ค้างไว้ออกมา
+                // เมื่อเจอข้อความปกติ จะเคลียร์รูปที่ค้างไว้ออกมาเป็น .img1
                 if (imgBlockActive) {
                     resolveImageBlock();
                 }
 
                 // จัดการ Heading
-                let isHeading = false;
-                
-                // 1. เช็กกรณีขึ้นต้นด้วย • และตามด้วย **
                 if (lineTrimmed.startsWith('•') && lineTrimmed.includes('**')) {
-                    lineTrimmed = lineTrimmed.replace(/^•\s*/, ''); // ลบ • และช่องว่างออก
-                    isHeading = true;
-                } 
-                // 2. เช็กกรณีขึ้นต้นด้วย ** (และไม่ใช่ **ภาพ:**)
-                else if (lineTrimmed.startsWith('**') && !lineTrimmed.startsWith('**ภาพ')) {
-                    isHeading = true;
+                    lineTrimmed = lineTrimmed.replace(/^•\s*/, ''); 
                 }
-
-                if (isHeading) {
+                if (lineTrimmed.startsWith('**') && !lineTrimmed.startsWith('**ภาพ')) {
                     if (!lineTrimmed.startsWith('## ')) {
                         lineTrimmed = '## ' + lineTrimmed;
                     }
@@ -276,43 +286,17 @@
                 bodyLines.push(lineTrimmed);
             }
 
-            // ถ้ามีคำสั่งแทรกรูปค้างอยู่บรรทัดสุดท้าย ให้เคลียร์ออกมาด้วย
+            // เคลียร์คำสั่งแทรกรูปค้างบรรทัดสุดท้าย
             if (imgBlockActive) {
                 resolveImageBlock();
             }
 
-            // จัดการ Prefix พาดหัว
-            const upperHeadline = headline.toUpperCase();
-            const hasExistingPrefix = 
-                upperHeadline.startsWith('UPDATE:') || 
-                upperHeadline.startsWith('SHORT NEWS:') || 
-                upperHeadline.startsWith('PHOTO ALBUM:') ||
-                upperHeadline.startsWith('BREAKING:') ||
-                upperHeadline.startsWith('NEWS:');
-
-            if (!hasExistingPrefix && elPrefix.value !== 'NONE') {
-                headline = `${elPrefix.value}: ${headline}`;
-            }
-
-            // ประกอบร่างข้อความทั้งหมด
-            let result = `${elCategory.value}\n\n`;
-            result += `${headline}\n\n`;
-            result += `เรื่อง: ${author}\n`;
-            if (photographer) result += `ภาพ: ${photographer}\n`;
-            
-            // นำ Link หน้าปกมาคั่นบรรทัดก่อน Body Text เสมอ
-            if (links.length > 0) {
-                result += `\n${links.join('\n')}\n`;
-            }
-            
-            result += `\nBody Text:\n\n`; 
-            
             // ตัดบรรทัดว่างส่วนท้ายทิ้ง
             while (bodyLines.length > 0 && bodyLines[bodyLines.length - 1] === '') {
                 bodyLines.pop();
             }
-            
-            // จัดการเนื้อหา เพิ่มบรรทัดว่างคั่นย่อหน้า
+
+            // จัดฟอร์แมตเนื้อหาแบบมีเว้นบรรทัด
             let formattedBody = '';
             for(let i=0; i < bodyLines.length; i++) {
                 const line = bodyLines[i];
@@ -320,8 +304,42 @@
                     formattedBody += line + '\n\n';
                 }
             }
+            formattedBody = formattedBody.trim();
 
-            result += formattedBody.trim();
+            // --- ประกอบร่างข้อความ (แยกตามโหมด Tab) ---
+            let result = '';
+
+            if (currentMode === 'full') {
+                // จัดการ Prefix พาดหัว
+                const upperHeadline = headline.toUpperCase();
+                const hasExistingPrefix = 
+                    upperHeadline.startsWith('UPDATE:') || 
+                    upperHeadline.startsWith('SHORT NEWS:') || 
+                    upperHeadline.startsWith('PHOTO ALBUM:') ||
+                    upperHeadline.startsWith('BREAKING:') ||
+                    upperHeadline.startsWith('NEWS:');
+
+                if (!hasExistingPrefix && elPrefix.value !== 'NONE') {
+                    headline = `${elPrefix.value}: ${headline}`;
+                }
+
+                result += `${elCategory.value}\n\n`;
+                result += `${headline}\n\n`;
+                result += `เรื่อง: ${author}\n`;
+                if (photographer) result += `ภาพ: ${photographer}\n`;
+                
+                if (links.length > 0) {
+                    result += `\n${links.join('\n')}\n`;
+                }
+                
+                result += `\nBody Text:\n\n`; 
+                result += formattedBody;
+            } else {
+                // โหมดจัดเฉพาะเนื้อหา (Content Only)
+                if (headline) result += `${headline}\n\n`;
+                if (links.length > 0) result += `${links.join('\n')}\n\n`;
+                result += formattedBody;
+            }
 
             // นำไปแสดงผล
             elFormatted.value = result;
@@ -404,6 +422,8 @@
         });
 
         btnCopy.addEventListener('click', handleCopy);
+        tabFull.addEventListener('click', () => switchTab('full'));
+        tabContent.addEventListener('click', () => switchTab('content'));
 
         // Initialize
         loadSettings();

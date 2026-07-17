@@ -186,6 +186,11 @@
                 // Clean up multiple spaces
                 lineTrimmed = lineTrimmed.replace(/\s{2,}/g, ' ');
 
+                // แปลงสัญลักษณ์ • นำหน้า ให้เป็น ##
+                if (lineTrimmed.startsWith('•')) {
+                    lineTrimmed = lineTrimmed.replace(/^•\s*/, '## ');
+                }
+
                 // หาพาดหัว
                 if (!headlineFound && lineTrimmed !== '') {
                     headline = lineTrimmed;

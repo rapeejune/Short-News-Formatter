@@ -151,7 +151,7 @@
 
             // ตัวแปรสำหรับจัดการกลุ่มรูปภาพ (Image Block)
             let imgBlockLinks = 0;
-            let imgBlockHasMarker = false;
+            let imgBlockMarkers = 0;
             let imgBlockActive = false;
 
             // ฟังก์ชันยุบรวมกลุ่มรูปภาพ
@@ -164,15 +164,17 @@
                         bodyLines.push(`.img${k}`);
                     }
                 } 
-                // ถ้าไม่มีลิงก์ แต่มีคำว่า [📷 รูปที่ X] ให้พิมพ์ .img1
-                else if (imgBlockHasMarker) {
-                    bodyLines.push(`.img1`);
+                // ถ้าไม่มีลิงก์ แต่มี marker (เช่น [📷 รูปที่ X]) ให้พิมพ์ .img1 ซ้ำตามจำนวน
+                else if (imgBlockMarkers > 0) {
+                    for (let k = 1; k <= imgBlockMarkers; k++) {
+                        bodyLines.push(`.img1`);
+                    }
                 }
                 
                 // รีเซ็ตค่าเพื่อเตรียมรับรูปถัดไป
                 imgBlockActive = false;
                 imgBlockLinks = 0;
-                imgBlockHasMarker = false;
+                imgBlockMarkers = 0;
             };
 
             for (let i = 0; i < lines.length; i++) {
@@ -180,6 +182,12 @@
                 
                 // ลบจุดที่ใช้คั่นบรรทัด
                 if (lineTrimmed === '.') {
+                    continue;
+                }
+
+                // ตัดบรรทัดที่เป็นชื่อไฟล์ภาพ (.jpg, .jpeg, .png, .webp, .gif) ออก
+                // โดยต้องไม่ขึ้นต้นด้วย http เพื่อป้องกันการลบลิงก์ภาพ
+                if (/\.(jpg|jpeg|png|webp|gif)$/i.test(lineTrimmed) && !lineTrimmed.startsWith('http')) {
                     continue;
                 }
 
@@ -219,14 +227,19 @@
                 
                 inBody = true; // ล็อกว่าเข้า Body แล้ว
 
-                // --- เช็กว่าเป็นส่วนหนึ่งของการแทรกรูปหรือไม่ ---
                 let lineNoStars = plainText;
                 let isPlaceholderText = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป');
-                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
+                let isPicMarker = (lineNoStars.includes('[') && lineNoStars.includes('รูปที่'));
 
-                if (isPlaceholderText || isPicMarker || isUrl) {
+                // ตัดคำว่า แทรกภาพ หรือ แทรกรูป ทิ้งเสมอ
+                if (isPlaceholderText) {
+                    continue;
+                }
+
+                // --- เช็กว่าเป็นส่วนหนึ่งของการแทรกรูปหรือไม่ ---
+                if (isPicMarker || isUrl) {
                     imgBlockActive = true;
-                    if (isPicMarker) imgBlockHasMarker = true;
+                    if (isPicMarker) imgBlockMarkers++;
                     if (isUrl) imgBlockLinks++;
                     continue;
                 }
@@ -236,17 +249,25 @@
                     continue;
                 }
 
-                // เมื่อเจอข้อความปกติ จะเคลียร์รูปที่ค้างไว้ออกมาเป็น .img1
+                // เมื่อเจอข้อความปกติ จะเคลียร์รูปที่ค้างไว้ออกมา
                 if (imgBlockActive) {
                     resolveImageBlock();
                 }
 
-                // จัดการ Heading (เริ่มด้วย ** หรือ • ** และไม่ใช่เครดิตภาพท้ายข่าว)
-                let textForCheck = lineTrimmed.replace(/\s/g, '');
-                if ((textForCheck.startsWith('**') || textForCheck.startsWith('•**')) && !textForCheck.startsWith('**ภาพ') && !textForCheck.startsWith('•**ภาพ')) {
-                    // ลบสัญลักษณ์ • นำหน้าออก (ถ้ามี)
-                    lineTrimmed = lineTrimmed.replace(/^•\s*/, '');
-                    // เติม ## ด้านหน้า
+                // จัดการ Heading
+                let isHeading = false;
+                
+                // 1. เช็กกรณีขึ้นต้นด้วย • และตามด้วย **
+                if (lineTrimmed.startsWith('•') && lineTrimmed.includes('**')) {
+                    lineTrimmed = lineTrimmed.replace(/^•\s*/, ''); // ลบ • และช่องว่างออก
+                    isHeading = true;
+                } 
+                // 2. เช็กกรณีขึ้นต้นด้วย ** (และไม่ใช่ **ภาพ:**)
+                else if (lineTrimmed.startsWith('**') && !lineTrimmed.startsWith('**ภาพ')) {
+                    isHeading = true;
+                }
+
+                if (isHeading) {
                     if (!lineTrimmed.startsWith('## ')) {
                         lineTrimmed = '## ' + lineTrimmed;
                     }

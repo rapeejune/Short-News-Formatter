@@ -186,11 +186,6 @@
                 // Clean up multiple spaces
                 lineTrimmed = lineTrimmed.replace(/\s{2,}/g, ' ');
 
-                // แปลงสัญลักษณ์ • นำหน้า ให้เป็น ##
-                if (lineTrimmed.startsWith('•')) {
-                    lineTrimmed = lineTrimmed.replace(/^•\s*/, '## ');
-                }
-
                 // หาพาดหัว
                 if (!headlineFound && lineTrimmed !== '') {
                     headline = lineTrimmed;
@@ -246,10 +241,15 @@
                     resolveImageBlock();
                 }
 
-                // จัดการ Heading (เริ่มด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
-                // ปรับให้จับทุกบรรทัดที่ขึ้นต้นด้วย ** แม้จะลืมใส่ ** ปิดท้ายก็ตาม
-                if (lineTrimmed.startsWith('**') && !lineTrimmed.replace(/\s/g, '').startsWith('**ภาพ')) {
-                    lineTrimmed = '## ' + lineTrimmed;
+                // จัดการ Heading (เริ่มด้วย ** หรือ • ** และไม่ใช่เครดิตภาพท้ายข่าว)
+                let textForCheck = lineTrimmed.replace(/\s/g, '');
+                if ((textForCheck.startsWith('**') || textForCheck.startsWith('•**')) && !textForCheck.startsWith('**ภาพ') && !textForCheck.startsWith('•**ภาพ')) {
+                    // ลบสัญลักษณ์ • นำหน้าออก (ถ้ามี)
+                    lineTrimmed = lineTrimmed.replace(/^•\s*/, '');
+                    // เติม ## ด้านหน้า
+                    if (!lineTrimmed.startsWith('## ')) {
+                        lineTrimmed = '## ' + lineTrimmed;
+                    }
                 }
 
                 bodyLines.push(lineTrimmed);

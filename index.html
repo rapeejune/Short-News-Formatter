@@ -179,38 +179,18 @@
             let bodyLines = [];
             let headlineFound = false;
             let inBody = false;
-
-            // ตัวแปรสำหรับจัดการกลุ่มรูปภาพ (Image Block)
-            let imgBlockLinks = 0;
-            let imgBlockHasMarker = false;
-            let imgBlockActive = false;
-
-            // ฟังก์ชันยุบรวมกลุ่มรูปภาพ
-            const resolveImageBlock = () => {
-                if (!imgBlockActive) return;
-                
-                if (imgBlockLinks > 0) {
-                    for (let k = 1; k <= imgBlockLinks; k++) {
-                        bodyLines.push(`.img${k}`);
-                    }
-                } else if (imgBlockHasMarker) {
-                    bodyLines.push(`.img1`);
-                }
-                
-                imgBlockActive = false;
-                imgBlockLinks = 0;
-                imgBlockHasMarker = false;
-            };
+            
+            let urlCounter = 0; // ตัวนับสำหรับลิงก์ที่วางติดกัน
 
             for (let i = 0; i < lines.length; i++) {
                 let lineTrimmed = lines[i].trim();
                 
-                // 1. ลบจุดที่ใช้คั่นบรรทัด
+                // ลบจุดที่ใช้คั่นบรรทัด
                 if (lineTrimmed === '.') {
                     continue;
                 }
 
-                // 2. ลบไฟล์ขยะประเภทรูปภาพ (ถ้าไม่ใช่ลิงก์)
+                // ลบไฟล์ขยะประเภทรูปภาพ (ถ้าไม่ใช่ลิงก์)
                 if (/\.(jpg|jpeg|png|webp|gif)$/i.test(lineTrimmed) && !lineTrimmed.startsWith('http')) {
                     continue;
                 }
@@ -237,8 +217,7 @@
                     continue;
                 } 
                 
-                let plainText = lineTrimmed.replace(/\*/g, '').trim();
-                let isUrl = plainText.startsWith('http://') || plainText.startsWith('https://');
+                let isUrl = lineTrimmed.startsWith('http://') || lineTrimmed.startsWith('https://');
 
                 // เช็กลิงก์หน้าปก (Top link)
                 if (!inBody && isUrl) {
@@ -251,44 +230,50 @@
                 
                 inBody = true; // ล็อกว่าเข้า Body แล้ว
 
-                // --- เช็กว่าเป็นส่วนหนึ่งของการแทรกรูปหรือไม่ ---
-                let lineNoStars = plainText;
-                let isPlaceholderText = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป');
-                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
-
-                if (isPlaceholderText || isPicMarker || isUrl) {
-                    imgBlockActive = true;
-                    if (isPicMarker) imgBlockHasMarker = true;
-                    if (isUrl) imgBlockLinks++;
-                    continue;
-                }
-
+                // ข้ามบรรทัดว่าง
                 if (lineTrimmed === '') {
                     bodyLines.push('');
                     continue;
                 }
 
-                // เมื่อเจอข้อความปกติ จะเคลียร์รูปที่ค้างไว้ออกมาเป็น .img1
-                if (imgBlockActive) {
-                    resolveImageBlock();
+                let plainText = lineTrimmed.replace(/\*/g, '').trim();
+
+                // 1. ข้ามคำสั่งแทรกภาพ (ลบทิ้ง ไม่นำมาแสดงผล)
+                if (plainText === 'แทรกภาพ' || plainText === 'แทรกรูป') {
+                    continue;
                 }
 
-                // จัดการ Heading (ต้องเริ่มด้วย ** และจบด้วย ** เท่านั้น)
-                let textToCheck = lineTrimmed;
-                if (textToCheck.startsWith('•')) {
-                    textToCheck = textToCheck.replace(/^•\s*/, '');
+                // 2. จัดการ Marker [📷 รูปที่ X] -> ให้เป็น .img1 เสมอทุกอันแยกกัน
+                if (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่')) {
+                    bodyLines.push('.img1');
+                    urlCounter = 0; // ตัดการนับลิงก์ต่อเนื่อง
+                    continue;
                 }
 
-                if (textToCheck.startsWith('**') && textToCheck.endsWith('**') && !textToCheck.startsWith('**ภาพ')) {
-                    lineTrimmed = '## ' + textToCheck;
+                // 3. จัดการลิงก์ใน Body -> ถ้ายาวติดกัน ให้นับ .img1, .img2
+                if (isUrl) {
+                    urlCounter++;
+                    bodyLines.push(`.img${urlCounter}`);
+                    continue;
+                }
+
+                // 4. ถ้าเป็นข้อความปกติ ให้รีเซ็ตตัวนับลิงก์
+                urlCounter = 0;
+
+                // 5. จัดการ Heading
+                let tempText = lineTrimmed;
+                if (tempText.startsWith('• ')) {
+                    tempText = tempText.substring(2).trim();
+                } else if (tempText.startsWith('•')) {
+                    tempText = tempText.substring(1).trim();
+                }
+
+                // ต้องคลุมด้วย ** หน้าและหลัง เท่านั้นถึงจะเป็น Heading
+                if (tempText.startsWith('**') && tempText.endsWith('**') && !tempText.startsWith('**ภาพ')) {
+                    lineTrimmed = '## ' + tempText;
                 }
 
                 bodyLines.push(lineTrimmed);
-            }
-
-            // เคลียร์คำสั่งแทรกรูปค้างบรรทัดสุดท้าย
-            if (imgBlockActive) {
-                resolveImageBlock();
             }
 
             // ตัดบรรทัดว่างส่วนท้ายทิ้ง

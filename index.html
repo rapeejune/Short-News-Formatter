@@ -273,14 +273,14 @@
                     resolveImageBlock();
                 }
 
-                // จัดการ Heading
-                if (lineTrimmed.startsWith('•') && lineTrimmed.includes('**')) {
-                    lineTrimmed = lineTrimmed.replace(/^•\s*/, ''); 
+                // จัดการ Heading (ต้องเริ่มด้วย ** และจบด้วย ** เท่านั้น)
+                let textToCheck = lineTrimmed;
+                if (textToCheck.startsWith('•')) {
+                    textToCheck = textToCheck.replace(/^•\s*/, '');
                 }
-                if (lineTrimmed.startsWith('**') && !lineTrimmed.startsWith('**ภาพ')) {
-                    if (!lineTrimmed.startsWith('## ')) {
-                        lineTrimmed = '## ' + lineTrimmed;
-                    }
+
+                if (textToCheck.startsWith('**') && textToCheck.endsWith('**') && !textToCheck.startsWith('**ภาพ')) {
+                    lineTrimmed = '## ' + textToCheck;
                 }
 
                 bodyLines.push(lineTrimmed);

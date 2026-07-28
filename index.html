@@ -29,10 +29,72 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .fg select,.fg input[type="text"]{font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:4px 8px;outline:none;font-family:inherit}
 .fg select:focus,.fg input:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.15)}
 
-.ci-row{display:flex;align-items:center;gap:7px}
-.ci-d{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.15s}
+.ci-row{display:flex;align-items:center;gap:6px}
+.ci-d{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.15s;position:relative;display:flex;align-items:center;justify-content:center}
+.ci-d span{position:absolute;bottom:-15px;font-size:8px;color:#aeaeb2;white-space:nowrap;opacity:0;transition:.15s;pointer-events:none;font-weight:500}
 .ci-d:hover{transform:scale(1.12)}
+.ci-d:hover span,.ci-d.on span{opacity:1}
 .ci-d.on{border-color:rgba(0,0,0,.3);transform:scale(1.12)}
+
+/* H2 chips (toggle) */
+.h2-chips{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.h2c{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:8px;font-size:12px;border:1px solid rgba(0,0,0,.06);background:#f8f8f8;transition:.15s}
+.h2c .num{font-family:monospace;font-size:10px;color:#e62227;min-width:18px}
+.h2c .txt{flex:1;color:#1d1d1f}
+.h2c .tag{font-family:monospace;font-size:9px;color:#aeaeb2;background:rgba(0,0,0,.04);padding:1px 5px;border-radius:4px}
+.h2c .rm{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.1);background:0;color:#aeaeb2;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
+.h2c .rm:hover{border-color:#e62227;color:#e62227;background:rgba(230,34,39,.06)}
+.h2c.off{opacity:.35;text-decoration:line-through}
+.h2c.off .num{color:#aeaeb2}
+
+/* Dark mode toggle */
+.dm-btn{font-size:14px;width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.12);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.dm-btn:hover{background:rgba(0,0,0,.06)}
+
+/* Dark mode */
+body.dark{background:#1c1c1e;color:#f5f5f7}
+body.dark .hdr,body.dark .sbar,body.dark .pnl,body.dark .out-card{background:#2c2c2e;border-color:rgba(255,255,255,.1)}
+body.dark .hdr h1{color:#f5f5f7}
+body.dark .hdr p,body.dark .fg label,body.dark .col-lbl{color:#98989d}
+body.dark .fg select,body.dark .fg input[type="text"],body.dark textarea{background:#3a3a3c;border-color:rgba(255,255,255,.12);color:#f5f5f7}
+body.dark .fg select:focus,body.dark .fg input:focus,body.dark textarea:focus{border-color:#0a84ff;box-shadow:0 0 0 2px rgba(10,132,255,.2)}
+body.dark .mtab{color:#98989d}
+body.dark .mtab:hover{color:#f5f5f7;background:rgba(255,255,255,.06)}
+body.dark .mtab.on{background:#3a3a3c;color:#0a84ff}
+body.dark .btn-sm{background:#2c2c2e;border-color:rgba(255,255,255,.12);color:#98989d}
+body.dark .btn-sm:hover{border-color:#e62227;color:#e62227}
+body.dark .otab{color:#98989d}
+body.dark .otab:hover{color:#f5f5f7}
+body.dark .otab.on{color:#e62227}
+body.dark .raw-area{background:#1c1c1e}
+body.dark .html-area{background:#1c1c1e;color:#98989d;border-color:rgba(255,255,255,.06)}
+body.dark .prev-area{color:#e5e5ea}
+body.dark .prev-area .p-cat{color:#636366}
+body.dark .prev-area .p-hl{color:#f5f5f7}
+body.dark .prev-area .p-meta{color:#98989d;border-color:rgba(255,255,255,.08)}
+body.dark .prev-area .p-meta strong{color:#f5f5f7}
+body.dark .prev-area .p-h2{background:#3a3a3c}
+body.dark .prev-area .p-img{background:#3a3a3c;border-color:#636366;color:#98989d}
+body.dark .prev-area .p-toc{background:#3a3a3c;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+body.dark .cpbar{border-color:rgba(255,255,255,.06)}
+body.dark .cpbar .info{color:#636366}
+body.dark .cbtn{background:#3a3a3c;border-color:rgba(255,255,255,.1);color:#98989d}
+body.dark .cbtn:hover{border-color:#0a84ff;color:#0a84ff}
+body.dark .bdg{background:#3a3a3c;color:#636366}
+body.dark .bdg.im{background:rgba(217,119,6,.12);color:#d97706}
+body.dark .bdg.h2b{background:rgba(230,34,39,.12);color:#e62227}
+body.dark .pnl summary{color:#98989d}
+body.dark .pnl .pb{border-color:rgba(255,255,255,.06)}
+body.dark .cki .n{color:#f5f5f7}
+body.dark .ci-d span{color:#636366}
+body.dark .ci-d.on{border-color:rgba(255,255,255,.4)}
+body.dark .h2c{background:#3a3a3c;border-color:rgba(255,255,255,.06)}
+body.dark .h2c .txt{color:#f5f5f7}
+body.dark .dm-btn{background:#2c2c2e;border-color:rgba(255,255,255,.12);color:#98989d}
+body.dark .dm-btn:hover{background:rgba(255,255,255,.08)}
+body.dark .toast{background:rgba(245,245,247,.92);color:#1d1d1f}
+body.dark .foot{color:#636366}
+body.dark .dbg pre{background:#3a3a3c;color:#98989d}
 
 .pnl{background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,.08);overflow:hidden}
 .pnl summary{padding:10px 16px;cursor:pointer;font-size:12px;font-weight:500;color:#6e6e73;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
@@ -120,7 +182,7 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 
 <div class="hdr">
   <div><h1><span class="hdr-dot"></span> News Formatter + TOC</h1><p>จัดฟอร์แมตข่าว + สร้างสารบัญ H2 พร้อมแถบสี CI</p></div>
-  <button class="btn-sm" id="btn-clear">🗑 ล้างทั้งหมด</button>
+  <div style="display:flex;gap:6px;align-items:center"><button class="dm-btn" id="dm-btn" title="Dark mode">🌙</button><button class="btn-sm" id="btn-clear">🗑 ล้างทั้งหมด</button></div>
 </div>
 
 <div class="mtabs">
@@ -137,14 +199,15 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 
 <div class="sbar">
   <span style="font-size:11px;font-weight:600;color:#6e6e73">สี CI:</span>
-  <div class="ci-row" id="ci-row">
-    <div class="ci-d on" style="background:#e62227" data-ci="NEWS"></div>
-    <div class="ci-d" style="background:#0000ff" data-ci="POP"></div>
-    <div class="ci-d" style="background:#c19380" data-ci="WEALTH"></div>
-    <div class="ci-d" style="background:#333;border:1px solid #ccc" data-ci="LIFE"></div>
-    <div class="ci-d" style="background:#ffa5f7" data-ci="SPORT"></div>
-    <div class="ci-d" style="background:#ffcd00" data-ci="TSS"></div>
+  <div class="ci-row" id="ci-row" style="margin-bottom:6px">
+    <div class="ci-d on" style="background:#e62227" data-ci="NEWS" title="NEWS"><span>NEWS</span></div>
+    <div class="ci-d" style="background:#0000ff" data-ci="POP" title="POP"><span>POP</span></div>
+    <div class="ci-d" style="background:#c19380" data-ci="WEALTH" title="WEALTH"><span>WEALTH</span></div>
+    <div class="ci-d" style="background:#333;border:1px solid #ccc" data-ci="LIFE" title="LIFE"><span>LIFE</span></div>
+    <div class="ci-d" style="background:#ffa5f7" data-ci="SPORT" title="SPORT"><span>SPORT</span></div>
+    <div class="ci-d" style="background:#ffcd00" data-ci="TSS" title="Secret Sauce"><span>TSS</span></div>
   </div>
+  <span style="font-size:9px;color:#aeaeb2">⬅ กดเปลี่ยนได้ทุกเมื่อ</span>
   <div class="fg"><label>หัวข้อ TOC:</label><input type="text" id="inp-toc" value="ประเด็นสำคัญ" style="width:130px"></div>
 </div>
 
@@ -230,6 +293,7 @@ const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 let mode='full',ciCat='NEWS',activeTab='raw';
 let outputs={formatted:'',wphtml:''};
 let parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};
+let removedH2=new Set();
 
 const CI_S={
   NEWS:'border-left:12px solid #e62227;padding-left:15px;background-color:#F8F8F8;padding:10px;',
@@ -250,7 +314,18 @@ function saveS(){sS('nf_cat',$('inp-cat').value);sS('nf_author',$('inp-author').
 $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-content').className='mtab';$('sbar').className='sbar';run()};
 $('mt-content').onclick=()=>{mode='content';$('mt-content').className='mtab on';$('mt-full').className='mtab';$('sbar').className='sbar hide';run()};
 document.querySelector('.otabs').addEventListener('click',e=>{const t=e.target.closest('.otab');if(!t)return;activeTab=t.dataset.t;document.querySelectorAll('.otab').forEach(x=>x.classList.toggle('on',x.dataset.t===activeTab));document.querySelectorAll('.opanel').forEach(p=>p.classList.remove('show'));$('pn-'+activeTab).classList.add('show')});
-document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{document.querySelectorAll('.ci-d').forEach(x=>x.classList.remove('on'));d.classList.add('on');ciCat=d.dataset.ci;run()}});
+document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
+  const prev=ciCat;
+  document.querySelectorAll('.ci-d').forEach(x=>x.classList.remove('on'));d.classList.add('on');ciCat=d.dataset.ci;
+  run();
+  if(prev!==ciCat&&parsed.headings.length){
+    showToast('🎨 เปลี่ยนสีเป็น '+ciCat+' — HTML อัปเดตแล้ว');
+    // Flash output card border
+    const card=document.querySelector('.out-card');
+    card.style.borderColor=CI_C[ciCat]||'#e62227';card.style.transition='border-color .3s';
+    setTimeout(()=>{card.style.borderColor='';},1500);
+  }
+}});
 
 // Image helpers
 const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup');
@@ -267,14 +342,53 @@ function run(){
   if(!raw.trim()){outputs={formatted:'',wphtml:''};parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};$('st-ch').textContent='0 อักษร';$('st-img').style.display='none';$('st-h2').style.display='none';$('out-raw').value='';$('out-html').textContent='';$('out-prev').innerHTML='<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div><small>จะแสดง Preview ให้ทันที</small></div>';$('dbg-log').textContent='';return}
 
   const lines=raw.split('\n');
+
+  // === ตรวจว่า input เป็น HTML หรือไม่ ===
+  // ถ้ามี <h2, <span, &nbsp; → normalize กลับเป็น plain text ก่อน
+  const hasHtmlH2=lines.some(l=>/<h2[\s>]/i.test(l));
+  const hasHtmlSpan=lines.some(l=>/<span[\s>]/i.test(l));
+  const hasNbsp=lines.some(l=>l.trim()==='&nbsp;');
+  const isHtmlInput=hasHtmlH2||(hasHtmlSpan&&hasNbsp);
+
+  let normalizedLines=lines;
+  if(isHtmlInput){
+    logs.push('📄 ตรวจพบ HTML input — normalize กลับเป็น plain text');
+    normalizedLines=[];
+    for(const line of lines){
+      const t=line.trim();
+      // &nbsp; → empty line
+      if(t==='&nbsp;'||t===''){normalizedLines.push('');continue}
+      // <!-- .img1 --> → .img1 placeholder
+      if(/^<!--\s*\.img1/.test(t)){normalizedLines.push('แทรกภาพ');continue}
+      // <h2 ...>text</h2> → **text** (skip TOC title h2 which has font-size:22px)
+      const h2m=t.match(/<h2[^>]*>(?:<(?:b|strong)[^>]*>)?([^<]+)(?:<\/(?:b|strong)>)?<\/h2>/i);
+      if(h2m&&!/font-size:\s*22px/.test(t)){normalizedLines.push('**'+h2m[1].trim()+'**');continue}
+      if(h2m&&/font-size:\s*22px/.test(t)){continue} // skip TOC title
+      // <span style="font-weight: 400;">text</span> → text
+      const spm=t.match(/^<span[^>]*>(.+?)<\/span>$/i);
+      if(spm){normalizedLines.push(spm[1].trim());continue}
+      // <a href="url"...>text</a> → url
+      const am=t.match(/^<a\s+href="([^"]+)"[^>]*>[^<]*<\/a>$/i);
+      if(am){normalizedLines.push(am[1]);continue}
+      // <div style="..."> TOC block → skip (will be regenerated)
+      if(/<div\s+style=/.test(t)&&/box-shadow/.test(t)){continue}
+      if(/<\/div>/.test(t)&&!/<div/.test(t)){continue}
+      if(/<ul[\s>]/.test(t)||/<\/ul>/.test(t)){continue}
+      if(/<li[\s>]/.test(t)){continue}
+      // Other HTML tags → strip tags
+      const stripped=t.replace(/<[^>]+>/g,'').trim();
+      if(stripped)normalizedLines.push(stripped);
+    }
+  }
+
   let headline='',author=$('inp-author').value,photographer='',topLinks=[],bodyLines=[];
   let hFound=false,inBody=false,totalImgs=0;
   let clOn=false,clPic=0,clUrls=new Set(),clFile=0,clHint=0,clSt=-1,lastE=false;
 
   const flush=()=>{if(!clOn)return;const uc=clUrls.size,n=Math.max(clHint,clPic,uc,clFile),f=n>0?n:1;totalImgs+=f;logs.push(`📸 Cluster(L${clSt}): hint=${clHint} pic=${clPic} url=${uc} file=${clFile} → ${f} img`);for(let k=0;k<f;k++)bodyLines.push('.img1');clOn=false;clPic=0;clUrls=new Set();clFile=0;clHint=0;clSt=-1};
 
-  for(let i=0;i<lines.length;i++){
-    let ln=lines[i].trim();if(ln==='.')continue;ln=ln.replace(/\s{2,}/g,' ');
+  for(let i=0;i<normalizedLines.length;i++){
+    let ln=normalizedLines[i].trim();if(ln==='.')continue;ln=ln.replace(/\s{2,}/g,' ');
     if(mode==='full'){
       if(!hFound&&ln!==''){headline=ln;hFound=true;continue}if(!hFound)continue;
       if(!inBody&&(ln.startsWith('เรื่อง:')||ln.startsWith('เรื่อง :'))){author=ln.replace(/^เรื่อง\s*:/,'').trim();continue}
@@ -314,10 +428,11 @@ function run(){
   // === Output 2: WordPress HTML ===
   const st=CI_S[ciCat]||CI_S.NEWS,col=CI_C[ciCat]||'#e62227';
   const tocTitle=$('inp-toc').value.trim()||'ประเด็นสำคัญ';
+  const activeH2=headings.filter((_,i)=>!removedH2.has(i));
   // Build TOC block
   let tocBlock='';
-  if(headings.length){
-    const items=headings.map((h,i)=>`    <li style="margin:8px 0;overflow-wrap:break-word;"><a href="#section${i+1}">${h}</a></li>`).join('\n');
+  if(activeH2.length){
+    const items=activeH2.map((h,i)=>`    <li style="margin:8px 0;overflow-wrap:break-word;"><a href="#section${i+1}">${h}</a></li>`).join('\n');
     tocBlock=`<div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,0.12);max-width:600px;">
   <div style="margin-bottom:12px;"><h2 style="font-size:22px;font-weight:700;">${esc(tocTitle)}</h2><div style="height:6px;background-color:${col};margin-top:6px;width:100%;"></div></div>
   <ul style="padding-left:20px;margin:0;list-style:disc;">
@@ -325,20 +440,26 @@ ${items}
   </ul>
 </div>`;
   }
-  // Build full WP HTML
+  // Build full WP HTML (only active H2)
   if(bodyLines.length){
-    const wp=[];let fpDone=false,tocIn=false,hIdx=0;
+    const wp=[];let fpDone=false,tocIn=false,hIdx=0,origIdx=0;
     for(const l of bodyLines){
       if(l==='')continue;
-      if(!tocIn&&fpDone&&headings.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
+      if(!tocIn&&fpDone&&activeH2.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
       const hm=l.match(/^## \*\*(.+)\*\*$/);
-      if(hm){wp.push('&nbsp;',`<h2 id="section${hIdx+1}" style="${st}">${hm[1]}</h2>`,'&nbsp;');hIdx++;fpDone=true;continue}
+      if(hm){
+        if(!removedH2.has(origIdx)){
+          hIdx++;
+          wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}">${hm[1]}</h2>`,'&nbsp;');
+        }
+        origIdx++;fpDone=true;continue;
+      }
       if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
       wp.push(`<span style="font-weight: 400;">${l}</span>`,'&nbsp;');fpDone=true;
     }
-    if(!tocIn&&headings.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
+    if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
     const cl=[];for(const b of wp){if(b==='&nbsp;'&&cl.length>0&&cl[cl.length-1]==='&nbsp;')continue;cl.push(b)}
     outputs.wphtml=cl.join('\n');
   }else{outputs.wphtml=''}
@@ -349,7 +470,7 @@ ${items}
   const ch=fmt.length,wo=fmt.trim().split(/\s+/).filter(w=>w.length>0).length;
   $('st-ch').textContent=ch.toLocaleString()+' อักษร / '+wo.toLocaleString()+' คำ';
   if(totalImgs>0){$('st-img').textContent='🖼 '+totalImgs;$('st-img').style.display=''}else $('st-img').style.display='none';
-  if(headings.length>0){$('st-h2').textContent='H2: '+headings.length;$('st-h2').style.display=''}else $('st-h2').style.display='none';
+  if(headings.length>0){$('st-h2').textContent='H2: '+activeH2.length+'/'+headings.length;$('st-h2').style.display=''}else $('st-h2').style.display='none';
   $('dbg-log').textContent=logs.length?logs.join('\n'):'';
 
   // Render all panels
@@ -362,7 +483,19 @@ ${items}
 function renderPreview(){
   const{headline,author,photographer,bodyLines,headings}=parsed;
   const col=CI_C[ciCat]||'#e62227',tocTitle=$('inp-toc').value.trim()||'ประเด็นสำคัญ';
+  const activeH2=headings.filter((_,i)=>!removedH2.has(i));
   const pv=$('out-prev');let html='';
+
+  // H2 toggle chips
+  if(headings.length>0){
+    html+='<div class="h2-chips">';
+    html+='<div style="font-size:10px;color:#aeaeb2;margin-bottom:2px;font-weight:600">H2 ในบทความ — กด ✕ เพื่อข้ามจาก TOC</div>';
+    headings.forEach((h,i)=>{
+      const off=removedH2.has(i);
+      html+=`<div class="h2c ${off?'off':''}"><span class="num">${String(i+1).padStart(2,'0')}</span><span class="txt">${esc(h)}</span><span class="tag">${off?'ข้าม':'section'+(i+1)}</span><button class="rm" onclick="toggleH2(${i})">${off?'+':'✕'}</button></div>`;
+    });
+    html+='</div>';
+  }
 
   if(mode==='full'&&headline){
     html+=`<div class="p-cat">${esc($('inp-cat').value)}</div><div class="p-hl">${esc(headline)}</div>`;
@@ -371,21 +504,71 @@ function renderPreview(){
     html+=`</div>`;
   }
 
-  let fpDone=false,tocIn=false;
+  let fpDone=false,tocIn=false,origIdx=0;
   for(const l of bodyLines){
     if(l==='')continue;
-    if(!tocIn&&fpDone&&headings.length){
-      html+=`<div class="p-toc"><h3>${esc(tocTitle)}</h3><div class="bar" style="background:${col}"></div><ul>${headings.map((h,j)=>`<li><a href="#">${esc(h)}</a></li>`).join('')}</ul></div>`;
+    if(!tocIn&&fpDone&&activeH2.length){
+      html+=`<div class="p-toc"><h3>${esc(tocTitle)}</h3><div class="bar" style="background:${col}"></div><ul>${activeH2.map((h,j)=>`<li><a href="#">${esc(h)}</a></li>`).join('')}</ul></div>`;
       tocIn=true;
     }
     const hm=l.match(/^## \*\*(.+)\*\*$/);
-    if(hm){html+=`<div class="p-h2" style="border-left:12px solid ${col}">${esc(hm[1])}</div>`;fpDone=true;continue}
+    if(hm){
+      if(!removedH2.has(origIdx)){
+        html+=`<div class="p-h2" style="border-left:12px solid ${col}">${esc(hm[1])}</div>`;
+      }
+      origIdx++;fpDone=true;continue;
+    }
     if(l==='.img1'){html+=`<div class="p-img">📷 ตำแหน่งรูปภาพ</div>`;continue}
     const pl=l.replace(/\*/g,'').trim();
     if(pl.startsWith('http://')||pl.startsWith('https://')){html+=`<div class="p-ref">🔗 ${esc(pl)}</div>`;fpDone=true;continue}
     html+=`<div class="p-para">${esc(l)}</div>`;fpDone=true;
   }
   pv.innerHTML=html||'<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div></div>';
+}
+
+function toggleH2(idx){
+  if(removedH2.has(idx))removedH2.delete(idx);else removedH2.add(idx);
+  // Rebuild outputs with updated removedH2
+  rebuildOutputs();
+}
+
+function rebuildOutputs(){
+  const{headings,bodyLines}=parsed;
+  const st=CI_S[ciCat]||CI_S.NEWS,col=CI_C[ciCat]||'#e62227';
+  const tocTitle=$('inp-toc').value.trim()||'ประเด็นสำคัญ';
+  const activeH2=headings.filter((_,i)=>!removedH2.has(i));
+
+  // Rebuild TOC block
+  let tocBlock='';
+  if(activeH2.length){
+    const items=activeH2.map((h,i)=>`    <li style="margin:8px 0;overflow-wrap:break-word;"><a href="#section${i+1}">${h}</a></li>`).join('\n');
+    tocBlock=`<div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,0.12);max-width:600px;">\n  <div style="margin-bottom:12px;"><h2 style="font-size:22px;font-weight:700;">${esc(tocTitle)}</h2><div style="height:6px;background-color:${col};margin-top:6px;width:100%;"></div></div>\n  <ul style="padding-left:20px;margin:0;list-style:disc;">\n${items}\n  </ul>\n</div>`;
+  }
+
+  // Rebuild WP HTML
+  if(bodyLines.length){
+    const wp=[];let fpDone=false,tocIn=false,hIdx=0,origIdx=0;
+    for(const l of bodyLines){
+      if(l==='')continue;
+      if(!tocIn&&fpDone&&activeH2.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
+      const hm=l.match(/^## \*\*(.+)\*\*$/);
+      if(hm){
+        if(!removedH2.has(origIdx)){hIdx++;wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}">${hm[1]}</h2>`,'&nbsp;')}
+        origIdx++;fpDone=true;continue;
+      }
+      if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
+      const pl=l.replace(/\*/g,'').trim();
+      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
+      wp.push(`<span style="font-weight: 400;">${l}</span>`,'&nbsp;');fpDone=true;
+    }
+    if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
+    const cl=[];for(const b of wp){if(b==='&nbsp;'&&cl.length>0&&cl[cl.length-1]==='&nbsp;')continue;cl.push(b)}
+    outputs.wphtml=cl.join('\n');
+  }
+
+  $('st-h2').textContent='H2: '+activeH2.length+'/'+headings.length;
+  $('out-html').textContent=outputs.wphtml;
+  renderPreview();
 }
 
 // === COPY ===
@@ -398,10 +581,15 @@ function fbCopy(t){const a=document.createElement('textarea');a.value=t;Object.a
 function showToast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 
 // === EVENTS ===
-$('txt-raw').addEventListener('input',run);
+$('txt-raw').addEventListener('input',()=>{removedH2.clear();run()});
 [$('inp-cat'),$('inp-pfx'),$('inp-author'),$('inp-toc')].forEach(el=>{el.addEventListener('input',saveS);el.addEventListener('change',saveS)});
 [$('d-hint'),$('d-pic'),$('d-url'),$('d-file'),$('d-dedup')].forEach(el=>el.addEventListener('change',saveS));
-$('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';run()}};
+$('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();run()}};
+
+// Dark mode
+function initDark(){const s=sG('nf_dark');const p=window.matchMedia('(prefers-color-scheme:dark)').matches;const dark=s?s==='1':p;document.body.classList.toggle('dark',dark);$('dm-btn').textContent=dark?'☀️':'🌙'}
+$('dm-btn').onclick=()=>{const isDark=!document.body.classList.contains('dark');document.body.classList.toggle('dark',isDark);$('dm-btn').textContent=isDark?'☀️':'🌙';sS('nf_dark',isDark?'1':'0')};
+initDark();
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
     e.preventDefault();

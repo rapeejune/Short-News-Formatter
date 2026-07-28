@@ -1,521 +1,560 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>News Auto-Formatter</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; padding: 12px; line-height: 1.5; }
-        .container { max-width: 1152px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>News Formatter + TOC</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f7;color:#1d1d1f;padding:12px;line-height:1.5}
+.container{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 
-        /* Header */
-        .header { background: #fff; padding: 16px 20px; border-radius: 16px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-        .header h1 { font-size: 18px; font-weight: 700; color: #1e3a5f; white-space: nowrap; }
-        .header p { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-        .btn-clear { font-size: 12px; background: #fef2f2; color: #dc2626; border: none; padding: 5px 12px; border-radius: 99px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
-        .btn-clear:hover { background: #fee2e2; }
+/* Header */
+.hdr{background:#fff;padding:14px 20px;border-radius:16px;border:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hdr h1{font-size:17px;font-weight:700;color:#1e3a5f;display:flex;align-items:center;gap:8px}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:#e62227;animation:pulse 2.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hdr p{font-size:11px;color:#86868b;margin-top:2px}
+.hdr-right{display:flex;gap:6px;align-items:center}
+.btn-sm{font-size:11px;border:1px solid rgba(0,0,0,0.12);background:#fff;color:#6e6e73;padding:4px 11px;border-radius:99px;cursor:pointer}
+.btn-sm:hover{border-color:#e62227;color:#e62227;background:rgba(230,34,39,0.05)}
 
-        /* Tabs */
-        .tabs { display: flex; gap: 4px; background: rgba(226,232,240,0.5); padding: 4px; border-radius: 8px; width: fit-content; }
-        .tab { padding: 8px 14px; font-size: 13px; font-weight: 500; border-radius: 6px; border: none; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; }
-        .tab:hover { background: rgba(226,232,240,0.5); color: #1e293b; }
-        .tab.active { background: #fff; color: #1d4ed8; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+/* Tabs (top) */
+.mode-tabs{display:flex;gap:4px;background:rgba(0,0,0,0.04);padding:3px;border-radius:8px;width:fit-content}
+.mode-tab{padding:7px 14px;font-size:12px;font-weight:500;border-radius:6px;border:none;cursor:pointer;background:transparent;color:#6e6e73;transition:.15s}
+.mode-tab:hover{color:#1d1d1f;background:rgba(0,0,0,0.04)}
+.mode-tab.active{background:#fff;color:#0071e3;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
 
-        /* Settings */
-        .settings { background: #fff; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
-        .settings.hidden { display: none; }
-        .settings label { font-size: 12px; font-weight: 500; color: #475569; }
-        .settings select, .settings input[type="text"] { font-size: 12px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; outline: none; }
-        .settings select:focus, .settings input[type="text"]:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+/* Settings */
+.settings-row{background:#fff;padding:10px 16px;border-radius:12px;border:1px solid rgba(0,0,0,0.08);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.settings-row.hidden{display:none}
+.fg{display:flex;align-items:center;gap:5px}
+.fg label{font-size:11px;font-weight:600;color:#6e6e73;white-space:nowrap}
+.fg select,.fg input[type="text"]{font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:4px 8px;outline:none;font-family:inherit}
+.fg select:focus,.fg input:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,0.15)}
 
-        /* Panels */
-        .panel { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .panel summary { padding: 12px 16px; cursor: pointer; font-size: 13px; font-weight: 500; color: #475569; user-select: none; list-style: none; display: flex; align-items: center; gap: 8px; }
-        .panel summary::-webkit-details-marker { display: none; }
-        .panel summary::before { content: '▶'; font-size: 9px; color: #94a3b8; transition: transform .15s; }
-        .panel[open] summary::before { transform: rotate(90deg); }
-        .panel .panel-body { padding: 4px 16px 14px; border-top: 1px solid #f1f5f9; }
-        .panel .hint-text { font-size: 11px; color: #94a3b8; margin-bottom: 8px; line-height: 1.6; }
-        .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-        @media (max-width: 640px) { .check-grid { grid-template-columns: 1fr; } }
-        .check-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
-        .check-item:hover { background: #f8fafc; }
-        .check-item input[type="checkbox"] { margin-top: 2px; accent-color: #3b82f6; }
-        .check-item .name { font-size: 12px; font-weight: 500; color: #334155; }
-        .check-item .desc { font-size: 10px; color: #94a3b8; }
-        .dedup-row { display: flex; align-items: center; gap: 8px; padding-top: 6px; border-top: 1px solid #f8fafc; margin-top: 4px; font-size: 12px; color: #475569; cursor: pointer; }
+/* CI Color Selector */
+.ci-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ci-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.15s;position:relative}
+.ci-dot:hover{transform:scale(1.12)}
+.ci-dot.active{border-color:rgba(0,0,0,0.25);transform:scale(1.12)}
+.ci-dot::after{content:attr(data-label);position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:#86868b;white-space:nowrap;opacity:0;transition:.15s;pointer-events:none}
+.ci-dot:hover::after,.ci-dot.active::after{opacity:1}
 
-        /* Grid */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-        .col { display: flex; flex-direction: column; gap: 6px; }
-        .col-label { font-size: 13px; font-weight: 600; color: #475569; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
-        .col-label .output-label { color: #1d4ed8; display: flex; align-items: center; gap: 6px; }
-        .badges { display: flex; gap: 6px; align-items: center; }
-        .badge { font-size: 10px; color: #94a3b8; background: #f1f5f9; padding: 2px 7px; border-radius: 4px; font-weight: 400; white-space: nowrap; }
-        .badge.img-badge { color: #d97706; background: #fffbeb; }
+/* Panels */
+.panel{background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,0.08);overflow:hidden}
+.panel summary{padding:10px 16px;cursor:pointer;font-size:12px;font-weight:500;color:#6e6e73;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+.panel summary::-webkit-details-marker{display:none}
+.panel summary::before{content:'▶';font-size:9px;color:#aeaeb2;transition:transform .15s}
+.panel[open] summary::before{transform:rotate(90deg)}
+.panel .pbody{padding:4px 16px 12px;border-top:1px solid rgba(0,0,0,0.05)}
+.panel .hint{font-size:10px;color:#aeaeb2;margin-bottom:6px;line-height:1.6}
+.chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+@media(max-width:640px){.chk-grid{grid-template-columns:1fr}}
+.chk-item{display:flex;align-items:flex-start;gap:7px;padding:5px 7px;border-radius:7px;cursor:pointer;font-size:12px}
+.chk-item:hover{background:#f8f8f8}
+.chk-item input{margin-top:2px;accent-color:#0071e3}
+.chk-item .nm{font-weight:500;color:#1d1d1f}
+.chk-item .ds{font-size:10px;color:#aeaeb2}
 
-        /* Textareas */
-        textarea { width: 100%; min-height: 400px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; outline: none; resize: none; font-size: 13px; line-height: 1.7; font-family: inherit; }
-        textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
-        textarea.output { background: #0f172a; color: #e2e8f0; border: none; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding-bottom: 52px; }
-        textarea.output:focus { box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 0 0 2px rgba(59,130,246,0.3); }
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:5px}
+.col-lbl{font-size:12px;font-weight:600;color:#6e6e73;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}
+.col-lbl .out-lbl{color:#0071e3}
+.badges{display:flex;gap:5px}
+.badge{font-size:9px;color:#aeaeb2;background:#f5f5f7;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.badge.img{color:#d97706;background:#fffbeb}
 
-        /* Buttons */
-        .output-wrap { position: relative; flex: 1; display: flex; flex-direction: column; }
-        .btn-bar { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 6px; }
-        .btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; border: none; cursor: pointer; transition: all .15s; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-        .btn-copy.disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
-        .btn-copy.ready { background: #2563eb; color: #fff; }
-        .btn-copy.ready:hover { background: #1d4ed8; }
-        .btn-copy.copied { background: #16a34a; color: #fff; }
-        .btn-reformat { background: #475569; color: #e2e8f0; }
-        .btn-reformat:hover { background: #334155; }
+/* Textarea */
+textarea{width:100%;min-height:360px;padding:11px;border-radius:12px;border:1px solid #d2d2d7;outline:none;resize:none;font-size:13px;line-height:1.7;font-family:inherit}
+textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,0.12)}
+textarea.dark-out{background:#1c1c1e;color:#e5e5ea;border:none;font-family:'SF Mono','Fira Code',Consolas,monospace;box-shadow:0 4px 12px rgba(0,0,0,0.12);padding-bottom:48px}
+textarea.dark-out:focus{box-shadow:0 4px 12px rgba(0,0,0,0.12),0 0 0 2px rgba(0,113,227,0.25)}
 
-        /* Debug */
-        .debug-panel summary { font-size: 11px; color: #94a3b8; cursor: pointer; user-select: none; }
-        .debug-panel pre { margin-top: 6px; padding: 8px; background: #f1f5f9; border-radius: 8px; font-size: 10px; color: #475569; font-family: monospace; overflow: auto; max-height: 180px; white-space: pre-wrap; }
+/* Output container */
+.out-wrap{position:relative;flex:1;display:flex;flex-direction:column}
+.out-tabs{display:flex;border-bottom:1px solid rgba(0,0,0,0.08);overflow-x:auto}
+.out-tab{padding:8px 13px;font-size:11px;font-weight:500;color:#6e6e73;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;white-space:nowrap;transition:.15s;font-family:inherit}
+.out-tab:hover{color:#1d1d1f}
+.out-tab.active{color:#e62227;border-bottom-color:#e62227}
+.out-body{padding:12px;flex:1;display:flex;flex-direction:column;gap:10px;min-height:360px}
 
-        /* Footer */
-        .hint-footer { text-align: right; font-size: 12px; color: #94a3b8; grid-column: 1 / -1; }
-        .hint-footer kbd { background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 5px; font-size: 10px; color: #475569; }
-        .field-group { display: flex; align-items: center; gap: 5px; }
-    </style>
+/* Code output */
+.code-box{flex:1;min-height:200px;background:#f5f5f7;border:1px solid rgba(0,0,0,0.06);border-radius:10px;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:11px;line-height:1.7;color:#6e6e73;padding:11px 13px;word-break:break-word;overflow-y:auto}
+
+/* Buttons */
+.btn-bar{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap}
+.btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:500;border:none;cursor:pointer;transition:.15s;font-family:inherit}
+.btn-primary{background:#0071e3;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.12)}
+.btn-primary:hover{background:#005bb5}
+.btn-primary.disabled{background:#aeaeb2;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid rgba(0,0,0,0.12);color:#6e6e73}
+.btn-ghost:hover{border-color:#0071e3;color:#0071e3}
+.btn-red{background:#e62227;color:#fff}
+.btn-red:hover{background:#c91e23}
+.btn-copied{background:#34c759;color:#fff}
+.btn-reformat{background:#3a3a3c;color:#e5e5ea}
+.btn-reformat:hover{background:#2c2c2e}
+
+/* H2 chip list */
+.h2-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;font-size:12px;border:1px solid rgba(0,0,0,0.06);background:#f5f5f7}
+.h2-chip .num{font-family:monospace;font-size:10px;color:#e62227;min-width:20px}
+.h2-chip .txt{flex:1;color:#1d1d1f}
+.h2-chip .id{font-family:monospace;font-size:9px;color:#aeaeb2;background:rgba(0,0,0,0.04);padding:1px 6px;border-radius:4px}
+.h2-chip .rm{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,0.1);background:transparent;color:#aeaeb2;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.h2-chip .rm:hover{border-color:#e62227;color:#e62227;background:rgba(230,34,39,0.06)}
+.h2-chip.removed{opacity:.35;text-decoration:line-through}
+
+/* TOC Preview */
+.toc-preview{background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:12px;padding:14px;max-width:100%}
+.toc-preview h2{font-size:16px;font-weight:700;margin-bottom:4px}
+.toc-preview .bar{height:5px;background:#e62227;margin-bottom:10px;width:100%;border-radius:2px}
+.toc-preview ul{padding-left:18px;margin:0;font-size:13px}
+.toc-preview li{margin:5px 0}
+.toc-preview a{color:#0071e3;text-decoration:none}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(50px);padding:9px 18px;background:rgba(29,29,31,0.92);backdrop-filter:blur(8px);border-radius:99px;font-size:12px;color:#fff;display:flex;align-items:center;gap:6px;z-index:100;opacity:0;transition:.25s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* Footer */
+.foot{text-align:right;font-size:11px;color:#aeaeb2;grid-column:1/-1}
+.foot kbd{background:#e5e5ea;border:1px solid #d2d2d7;border-radius:3px;padding:1px 5px;font-size:9px;color:#6e6e73}
+
+/* Debug */
+.dbg summary{font-size:10px;color:#aeaeb2;cursor:pointer}
+.dbg pre{margin-top:5px;padding:7px;background:#f5f5f7;border-radius:7px;font-size:9px;color:#6e6e73;font-family:monospace;overflow:auto;max-height:160px;white-space:pre-wrap}
+</style>
 </head>
 <body>
-    <div class="container">
+<div class="container">
 
-        <!-- Header -->
-        <div class="header">
-            <div>
-                <h1>📰 News Auto-Formatter</h1>
-                <p>วางข้อความดิบจาก Line ระบบจะจัดฟอร์แมตให้พร้อมลงเว็บทันที</p>
-            </div>
-            <button id="btn-clear-all" class="btn-clear">🗑 ล้างทั้งหมด</button>
-        </div>
+<!-- Header -->
+<div class="hdr">
+  <div><h1><span class="hdr-dot"></span> News Formatter + TOC</h1><p>จัดฟอร์แมตข่าว + สร้างสารบัญ H2 พร้อมแถบสี CI ในที่เดียว</p></div>
+  <div class="hdr-right"><button class="btn-sm" id="btn-clear">🗑 ล้างทั้งหมด</button></div>
+</div>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <button id="tab-full" class="tab active">ฟอร์แมตลงเว็บ (เต็มรูปแบบ)</button>
-            <button id="tab-content" class="tab">จัดเฉพาะเนื้อหา (Content Only)</button>
-        </div>
+<!-- Mode Tabs -->
+<div class="mode-tabs">
+  <button class="mode-tab active" id="mt-full">ฟอร์แมตลงเว็บ</button>
+  <button class="mode-tab" id="mt-content">จัดเฉพาะเนื้อหา</button>
+</div>
 
-        <!-- Settings Bar -->
-        <div id="settings-bar" class="settings">
-            <span style="color:#94a3b8">⚙️</span>
-            <div class="field-group">
-                <label>หมวดหมู่:</label>
-                <input type="text" id="input-category" list="cat-list" style="width:200px" value="NEWS / POLITICS">
-                <datalist id="cat-list">
-                    <option value="NEWS / POLITICS">
-                    <option value="NEWS / THAILAND">
-                    <option value="NEWS / WORLD">
-                    <option value="NEWS / BUSINESS & ECONOMY">
-                    <option value="NEWS / SOCIAL">
-                    <option value="NEWS / ENVIRONMENT">
-                    <option value="LIFE / CULTURE">
-                    <option value="LIFE / HEALTH">
-                    <option value="LIFE / TRAVEL">
-                    <option value="LIFE / FOOD">
-                    <option value="LIFE / TECH">
-                    <option value="OPINION / COLUMNS">
-                    <option value="PODCAST / DAILY">
-                </datalist>
-            </div>
-            <div class="field-group">
-                <label>พาดหัวเริ่ม:</label>
-                <select id="select-prefix">
-                    <option value="UPDATE">UPDATE</option>
-                    <option value="SHORT NEWS">SHORT NEWS</option>
-                    <option value="PHOTO ALBUM">PHOTO ALBUM</option>
-                    <option value="BREAKING">BREAKING</option>
-                    <option value="NONE">ไม่ใส่</option>
-                </select>
-            </div>
-            <div class="field-group">
-                <label>ผู้เขียน:</label>
-                <input type="text" id="input-author" style="width:170px">
-            </div>
-        </div>
+<!-- Settings -->
+<div id="settings-bar" class="settings-row">
+  <span style="color:#aeaeb2;font-size:12px">⚙️</span>
+  <div class="fg"><label>หมวดหมู่:</label><input type="text" id="inp-cat" list="cat-dl" style="width:170px" value="NEWS / POLITICS"><datalist id="cat-dl"><option value="NEWS / POLITICS"><option value="NEWS / THAILAND"><option value="NEWS / WORLD"><option value="NEWS / BUSINESS & ECONOMY"><option value="NEWS / SOCIAL"><option value="NEWS / ENVIRONMENT"><option value="LIFE / CULTURE"><option value="LIFE / HEALTH"><option value="LIFE / TRAVEL"><option value="LIFE / FOOD"><option value="LIFE / TECH"><option value="OPINION / COLUMNS"><option value="PODCAST / DAILY"></datalist></div>
+  <div class="fg"><label>Prefix:</label><select id="inp-prefix"><option value="UPDATE">UPDATE</option><option value="SHORT NEWS">SHORT NEWS</option><option value="PHOTO ALBUM">PHOTO ALBUM</option><option value="BREAKING">BREAKING</option><option value="NONE">ไม่ใส่</option></select></div>
+  <div class="fg"><label>ผู้เขียน:</label><input type="text" id="inp-author" style="width:150px"></div>
+</div>
 
-        <!-- Image Detection Settings -->
-        <details class="panel" id="img-settings-panel">
-            <summary>🖼️ ตั้งค่าการตรวจจับภาพ</summary>
-            <div class="panel-body">
-                <p class="hint-text">เลือกรูปแบบที่นักเขียนใช้บอกตำแหน่งภาพ — ระบบจะรวมบรรทัดที่ติดกันเป็น 1 บล็อก แล้วนับจำนวนภาพจากสัญญาณที่มากที่สุด</p>
-                <div class="check-grid">
-                    <label class="check-item"><input type="checkbox" id="detect-hint" checked>
-                        <div><div class="name">คำบอก "แทรกภาพ/แทรกรูป"</div><div class="desc">เช่น แทรกภาพ, (วางรูป), (แทรกรูป)</div></div>
-                    </label>
-                    <label class="check-item"><input type="checkbox" id="detect-pic-marker" checked>
-                        <div><div class="name">มาร์กเกอร์ [📷 รูปที่ N]</div><div class="desc">เช่น [📷 รูปที่ 1], [รูปที่ 2]</div></div>
-                    </label>
-                    <label class="check-item"><input type="checkbox" id="detect-url" checked>
-                        <div><div class="name">ลิงก์ URL (Drive, etc.)</div><div class="desc">เช่น https://drive.google.com/...</div></div>
-                    </label>
-                    <label class="check-item"><input type="checkbox" id="detect-filename" checked>
-                        <div><div class="name">ชื่อไฟล์ภาพ</div><div class="desc">เช่น IMG-01.jpg, palanuson-03, cover.png</div></div>
-                    </label>
-                </div>
-                <label class="dedup-row"><input type="checkbox" id="detect-dedup-url" checked> ตัด URL ซ้ำ (Deduplicate)</label>
-            </div>
-        </details>
+<!-- CI Color for TOC -->
+<div class="settings-row">
+  <span style="font-size:11px;font-weight:600;color:#6e6e73">แถบสี CI (TOC):</span>
+  <div class="ci-row" id="ci-row">
+    <div class="ci-dot active" style="background:#e62227" data-ci="NEWS" data-label="NEWS" data-color="#e62227"></div>
+    <div class="ci-dot" style="background:#0000ff" data-ci="POP" data-label="POP" data-color="#0000ff"></div>
+    <div class="ci-dot" style="background:#c19380" data-ci="WEALTH" data-label="WEALTH" data-color="#c19380"></div>
+    <div class="ci-dot" style="background:#333;border:1px solid #ccc" data-ci="LIFE" data-label="LIFE" data-color="#000000"></div>
+    <div class="ci-dot" style="background:#ffa5f7" data-ci="SPORT" data-label="SPORT" data-color="#ffa5f7"></div>
+    <div class="ci-dot" style="background:#ffcd00" data-ci="TSS" data-label="Secret Sauce" data-color="#ffcd00"></div>
+  </div>
+  <div class="fg"><label>หัวข้อ TOC:</label><input type="text" id="inp-toc-title" value="ประเด็นสำคัญ" style="width:140px"></div>
+</div>
 
-        <!-- Main Grid -->
-        <div class="grid">
-            <div class="col">
-                <div class="col-label"><span>ข้อความต้นฉบับ (Raw Text)</span></div>
-                <textarea id="text-raw" placeholder="วางข้อความที่นี่..."></textarea>
-            </div>
-            <div class="col">
-                <div class="col-label">
-                    <span class="output-label">ผลลัพธ์พร้อมใช้งาน →</span>
-                    <div class="badges">
-                        <span class="badge" id="char-count">0 อักษร / 0 คำ</span>
-                        <span class="badge img-badge" id="img-count" style="display:none">🖼 0 ภาพ</span>
-                    </div>
-                </div>
-                <div class="output-wrap">
-                    <textarea id="text-formatted" class="output" placeholder="ข้อความที่จัดฟอร์แมตแล้วจะแสดงที่นี่..."></textarea>
-                    <div class="btn-bar">
-                        <button id="btn-reformat" class="btn btn-reformat" style="display:none" title="จัดฟอร์แมตใหม่หลังแก้ไข output">🔄 Reformat</button>
-                        <button id="btn-copy" class="btn btn-copy disabled" title="Ctrl+Enter">📋 คัดลอก</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Debug -->
-            <details class="debug-panel" style="grid-column:1/-1">
-                <summary>🔍 ดู Log การตรวจจับภาพ (Debug)</summary>
-                <pre id="debug-log"></pre>
-            </details>
-
-            <div class="hint-footer">
-                💡 <kbd>Ctrl/Cmd + Enter</kbd> = คัดลอกผลลัพธ์ &nbsp;|&nbsp; วางแบบล้างฟอร์แมต = <kbd>Ctrl/Cmd + Shift + V</kbd>
-            </div>
-        </div>
+<!-- Image Detection -->
+<details class="panel">
+  <summary>🖼️ ตั้งค่าการตรวจจับภาพ</summary>
+  <div class="pbody">
+    <p class="hint">เลือกรูปแบบที่นักเขียนใช้บอกตำแหน่งภาพ</p>
+    <div class="chk-grid">
+      <label class="chk-item"><input type="checkbox" id="d-hint" checked><div><div class="nm">คำบอก "แทรกภาพ"</div><div class="ds">แทรกภาพ, (วางรูป)</div></div></label>
+      <label class="chk-item"><input type="checkbox" id="d-pic" checked><div><div class="nm">[📷 รูปที่ N]</div><div class="ds">มาร์กเกอร์รูปภาพ</div></div></label>
+      <label class="chk-item"><input type="checkbox" id="d-url" checked><div><div class="nm">ลิงก์ URL</div><div class="ds">Drive, etc.</div></div></label>
+      <label class="chk-item"><input type="checkbox" id="d-file" checked><div><div class="nm">ชื่อไฟล์ภาพ</div><div class="ds">IMG-01.jpg, palanuson-03</div></div></label>
     </div>
+    <label class="chk-item" style="margin-top:4px;border-top:1px solid rgba(0,0,0,0.04);padding-top:6px"><input type="checkbox" id="d-dedup" checked><div class="nm">ตัด URL ซ้ำ</div></label>
+  </div>
+</details>
 
-    <script>
-        // === DOM ===
-        const $ = (id) => document.getElementById(id);
-        const elRaw = $('text-raw');
-        const elOut = $('text-formatted');
-        const elCat = $('input-category');
-        const elPrefix = $('select-prefix');
-        const elAuthor = $('input-author');
-        const btnCopy = $('btn-copy');
-        const btnReformat = $('btn-reformat');
-        const btnClear = $('btn-clear-all');
-        const charCount = $('char-count');
-        const imgCount = $('img-count');
-        const tabFull = $('tab-full');
-        const tabContent = $('tab-content');
-        const settingsBar = $('settings-bar');
-        const debugLog = $('debug-log');
+<!-- Main Grid -->
+<div class="grid">
+  <!-- Input -->
+  <div class="col">
+    <div class="col-lbl">ข้อความต้นฉบับ (Raw Text)</div>
+    <textarea id="txt-raw" placeholder="วางข้อความที่นี่..."></textarea>
+  </div>
 
-        const dHint = $('detect-hint');
-        const dPic = $('detect-pic-marker');
-        const dUrl = $('detect-url');
-        const dFile = $('detect-filename');
-        const dDedup = $('detect-dedup-url');
+  <!-- Output -->
+  <div class="col">
+    <div class="col-lbl">
+      <span class="out-lbl">ผลลัพธ์ →</span>
+      <div class="badges"><span class="badge" id="stat-chars">0 อักษร</span><span class="badge img" id="stat-imgs" style="display:none">🖼 0</span><span class="badge" id="stat-h2" style="display:none">H2: 0</span></div>
+    </div>
+    <div class="out-wrap" style="background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,0.08);overflow:hidden;display:flex;flex-direction:column;min-height:420px">
+      <div class="out-tabs" id="out-tabs">
+        <button class="out-tab active" data-tab="formatted">📝 จัดแล้ว</button>
+        <button class="out-tab" data-tab="h2code">🏷️ H2 + Style</button>
+        <button class="out-tab" data-tab="toccode">📋 TOC Block</button>
+        <button class="out-tab" data-tab="fullcode">📦 รวมทั้งหมด</button>
+      </div>
+      <div class="out-body" id="out-body">
+        <!-- content injected by JS -->
+      </div>
+    </div>
+  </div>
 
-        let mode = 'full';
-        let outputDirty = false; // ผู้ใช้แก้ output เอง
+  <details class="dbg" style="grid-column:1/-1"><summary>🔍 Debug Log</summary><pre id="dbg-log"></pre></details>
+  <div class="foot">💡 <kbd>Ctrl/Cmd+Enter</kbd> = คัดลอกแท็บปัจจุบัน &nbsp;|&nbsp; วางแบบล้างฟอร์แมต = <kbd>Ctrl/Cmd+Shift+V</kbd></div>
+</div>
+</div>
 
-        // === Storage (safe) ===
-        const mem = {};
-        const sG = (k) => { try { return localStorage.getItem(k); } catch(e) { return mem[k] || null; } };
-        const sS = (k,v) => { try { localStorage.setItem(k,v); } catch(e) { mem[k]=v; } };
+<div class="toast" id="toast"><span id="toast-msg">Copied!</span></div>
 
-        const load = () => {
-            elCat.value = sG('nf_cat') || 'NEWS / POLITICS';
-            elAuthor.value = sG('nf_author') || 'THE STANDARD TEAM';
-            elPrefix.value = sG('nf_prefix') || 'UPDATE';
-            let o = {}; try { o = JSON.parse(sG('nf_img')||'{}'); } catch(e) {}
-            dHint.checked = o.h !== false;
-            dPic.checked = o.p !== false;
-            dUrl.checked = o.u !== false;
-            dFile.checked = o.f !== false;
-            dDedup.checked = o.d !== false;
-        };
-        const save = () => {
-            sS('nf_cat', elCat.value);
-            sS('nf_author', elAuthor.value);
-            sS('nf_prefix', elPrefix.value);
-            sS('nf_img', JSON.stringify({ h:dHint.checked, p:dPic.checked, u:dUrl.checked, f:dFile.checked, d:dDedup.checked }));
-            formatNews();
-        };
+<script>
+// === DOM ===
+const $=id=>document.getElementById(id);
+const elRaw=$('txt-raw'), elCat=$('inp-cat'), elPrefix=$('inp-prefix'), elAuthor=$('inp-author');
+const elTocTitle=$('inp-toc-title');
+const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup');
+const dbgLog=$('dbg-log');
+let mode='full', activeOutTab='formatted', ciCat='NEWS';
+let outputs={formatted:'',h2code:'',toccode:'',fullcode:''};
+let detectedHeadings=[], removedH2=new Set(), totalImgs=0;
 
-        // === Tabs ===
-        const switchTab = (m) => {
-            mode = m;
-            tabFull.className = 'tab' + (m==='full' ? ' active' : '');
-            tabContent.className = 'tab' + (m==='content' ? ' active' : '');
-            settingsBar.className = m==='full' ? 'settings' : 'settings hidden';
-            formatNews();
-        };
+// === CI Styles ===
+const CI={
+  NEWS:'border-left:12px solid #e62227;padding-left:15px;background-color:#F8F8F8;padding:10px;',
+  POP:'border-left:12px solid #0000ff;padding-left:15px;background-color:#F8F8F8;padding:10px;',
+  WEALTH:'border-left:12px solid #c19380;padding-left:15px;background-color:#F8F8F8;padding:10px;',
+  LIFE:'border-left:12px solid #000000;padding-left:15px;background-color:#F8F8F8;padding:10px;',
+  SPORT:'border-left:12px solid #ffa5f7;padding-left:15px;background-color:#F8F8F8;padding:10px;',
+  TSS:'border-left:13px solid #ffcd00;padding-left:15px;background:rgba(255,255,255,0.25);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:10px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.1);color:#000;'
+};
+const ciColor={NEWS:'#e62227',POP:'#0000ff',WEALTH:'#c19380',LIFE:'#000000',SPORT:'#ffa5f7',TSS:'#ffcd00'};
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-        // === Image detection ===
-        const isHintLine = (s) => dHint.checked && (s==='แทรกภาพ' || s==='แทรกรูป' || s.includes('(วางรูป') || s.includes('(แทรกรูป') || s.includes('(วางภาพ'));
-        const isPicLine = (s) => dPic.checked && s.startsWith('[') && s.includes('รูปที่');
-        const isImgUrl = (b) => dUrl.checked && b;
+// === Safe storage ===
+const mem={};
+const sG=k=>{try{return localStorage.getItem(k)}catch(e){return mem[k]||null}};
+const sS=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){mem[k]=v}};
 
-        const isFilenameLine = (s) => {
-            if (!dFile.checked) return false;
-            const parts = s.split('/').map(p => p.trim());
-            let fc = 0, vc = 0;
-            for (const p of parts) {
-                if (!p) continue; vc++;
-                if (/\.(jpg|jpeg|png|webp|gif|heic|heif|tiff?)$/i.test(p)) { fc++; continue; }
-                if (p.toLowerCase().includes('palanuson')) { fc++; continue; }
-                if (/^(IMG|DSC|DJI|DCIM|PHOTO|PIC|COVER|THUMB|HERO|BANNER)[_-]\d/.test(p) ||
-                    /^(Screenshot|Screen\s?Shot)[_\s-]\d/i.test(p)) { fc++; continue; }
-            }
-            return vc > 0 && fc === vc;
-        };
+function loadSettings(){
+  elCat.value=sG('nf_cat')||'NEWS / POLITICS';
+  elAuthor.value=sG('nf_author')||'THE STANDARD TEAM';
+  elPrefix.value=sG('nf_prefix')||'UPDATE';
+  elTocTitle.value=sG('nf_toc')||'ประเด็นสำคัญ';
+  let o={};try{o=JSON.parse(sG('nf_img')||'{}')}catch(e){}
+  dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;
+}
+function saveSettings(){
+  sS('nf_cat',elCat.value);sS('nf_author',elAuthor.value);sS('nf_prefix',elPrefix.value);sS('nf_toc',elTocTitle.value);
+  sS('nf_img',JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked}));
+  runFormat();
+}
 
-        // === ตรวจว่า URL เป็น "ลิงก์อ้างอิง" ไม่ใช่ภาพ ===
-        // ลิงก์ท้ายบทความที่มี domain ข่าว/อ้างอิง ไม่ควรจับเป็น .img1
-        const isReferenceUrl = (url) => {
-            const refDomains = [
-                'thestandard.co', 'bbc.com', 'bbc.co.uk', 'reuters.com', 'apnews.com',
-                'nytimes.com', 'washingtonpost.com', 'theguardian.com', 'bloomberg.com',
-                'cnbc.com', 'cnn.com', 'aljazeera.com', 'nhk.or.jp', 'bangkokpost.com',
-                'nationthailand.com', 'matichon.co.th', 'thairath.co.th', 'pptvhd36.com',
-                'thaipbs.or.th', 'workpointtoday.com', 'thaipost.net', 'dailynews.co.th',
-                'prachachat.net', 'mgronline.com', 'twitter.com', 'x.com',
-                'facebook.com', 'youtube.com', 'youtu.be', 'tiktok.com', 'instagram.com',
-                'wikipedia.org', 'who.int', 'un.org', 'worldbank.org',
-            ];
-            try {
-                const hostname = new URL(url).hostname.replace(/^www\./, '');
-                return refDomains.some(d => hostname === d || hostname.endsWith('.' + d));
-            } catch(e) { return false; }
-        };
+// === Mode tabs ===
+$('mt-full').onclick=()=>{mode='full';$('mt-full').className='mode-tab active';$('mt-content').className='mode-tab';$('settings-bar').className='settings-row';runFormat()};
+$('mt-content').onclick=()=>{mode='content';$('mt-content').className='mode-tab active';$('mt-full').className='mode-tab';$('settings-bar').className='settings-row hidden';runFormat()};
 
-        // === Main Formatter ===
-        const formatNews = () => {
-            const raw = elRaw.value;
-            const logs = [];
-            outputDirty = false;
-            btnReformat.style.display = 'none';
+// === CI selector ===
+document.querySelectorAll('.ci-dot').forEach(dot=>{
+  dot.onclick=()=>{
+    document.querySelectorAll('.ci-dot').forEach(d=>d.classList.remove('active'));
+    dot.classList.add('active');
+    ciCat=dot.dataset.ci;
+    runFormat();
+  };
+});
 
-            if (!raw.trim()) {
-                elOut.value = '';
-                charCount.textContent = '0 อักษร / 0 คำ';
-                imgCount.style.display = 'none';
-                debugLog.textContent = '';
-                btnCopy.className = 'btn btn-copy disabled';
-                return;
-            }
+// === Image detection helpers ===
+const isHintLn=s=>dH.checked&&(s==='แทรกภาพ'||s==='แทรกรูป'||s.includes('(วางรูป')||s.includes('(แทรกรูป')||s.includes('(วางภาพ'));
+const isPicLn=s=>dP.checked&&s.startsWith('[')&&s.includes('รูปที่');
+const isImgUrl=b=>dU.checked&&b;
+const isFileLn=s=>{
+  if(!dF.checked)return false;
+  const parts=s.split('/').map(p=>p.trim());let fc=0,vc=0;
+  for(const p of parts){if(!p)continue;vc++;
+    if(/\.(jpg|jpeg|png|webp|gif|heic|heif|tiff?)$/i.test(p)){fc++;continue}
+    if(p.toLowerCase().includes('palanuson')){fc++;continue}
+    if(/^(IMG|DSC|DJI|DCIM|PHOTO|PIC|COVER|THUMB|HERO|BANNER)[_-]\d/.test(p)||/^(Screenshot|Screen\s?Shot)[_\s-]\d/i.test(p)){fc++;continue}
+  }
+  return vc>0&&fc===vc;
+};
+const refDomains=['thestandard.co','bbc.com','bbc.co.uk','reuters.com','apnews.com','nytimes.com','washingtonpost.com','theguardian.com','bloomberg.com','cnbc.com','cnn.com','bangkokpost.com','nationthailand.com','matichon.co.th','thairath.co.th','thaipbs.or.th','twitter.com','x.com','facebook.com','youtube.com','youtu.be','tiktok.com','instagram.com','wikipedia.org'];
+const isRefUrl=url=>{try{const h=new URL(url).hostname.replace(/^www\./,'');return refDomains.some(d=>h===d||h.endsWith('.'+d))}catch(e){return false}};
 
-            const lines = raw.split('\n');
-            let headline = '', author = elAuthor.value, photographer = '';
-            let topLinks = [], bodyLines = [];
-            let headlineFound = false, inBody = false;
-            let totalImgCount = 0;
+// === Main formatter ===
+function runFormat(){
+  const raw=elRaw.value, logs=[];
+  totalImgs=0; detectedHeadings=[]; removedH2=new Set();
 
-            // Image cluster
-            let clOn = false, clPic = 0, clUrls = new Set(), clFile = 0, clHint = false, clStart = -1;
+  if(!raw.trim()){
+    outputs={formatted:'',h2code:'',toccode:'',fullcode:''};
+    $('stat-chars').textContent='0 อักษร';$('stat-imgs').style.display='none';$('stat-h2').style.display='none';
+    dbgLog.textContent='';renderOutTab();return;
+  }
 
-            const flush = () => {
-                if (!clOn) return;
-                const uc = clUrls.size;
-                const n = Math.max(clHint?1:0, clPic, uc, clFile);
-                const final = n > 0 ? n : 1;
-                totalImgCount += final;
-                logs.push(`  📸 Cluster (L${clStart}): hint=${clHint} pic=${clPic} url=${uc} file=${clFile} → .img1 ×${final}`);
-                for (let k = 0; k < final; k++) bodyLines.push('.img1');
-                clOn=false; clPic=0; clUrls=new Set(); clFile=0; clHint=false; clStart=-1;
-            };
+  const lines=raw.split('\n');
+  let headline='',author=elAuthor.value,photographer='';
+  let topLinks=[],bodyLines=[];
+  let headlineFound=false,inBody=false;
+  let clOn=false,clPic=0,clUrls=new Set(),clFile=0,clHint=false,clStart=-1;
+  let lastEmpty=false;
 
-            // ติดตาม "บรรทัดว่างก่อนหน้า" เพื่อยุบซ้ำ
-            let lastWasEmpty = false;
+  const flush=()=>{
+    if(!clOn)return;
+    const uc=clUrls.size,n=Math.max(clHint?1:0,clPic,uc,clFile),f=n>0?n:1;
+    totalImgs+=f;logs.push(`  📸 Cluster(L${clStart}): hint=${clHint} pic=${clPic} url=${uc} file=${clFile} → .img1 ×${f}`);
+    for(let k=0;k<f;k++)bodyLines.push('.img1');
+    clOn=false;clPic=0;clUrls=new Set();clFile=0;clHint=false;clStart=-1;
+  };
 
-            for (let i = 0; i < lines.length; i++) {
-                let ln = lines[i].trim();
-                if (ln === '.') continue;
-                ln = ln.replace(/\s{2,}/g, ' ');
+  for(let i=0;i<lines.length;i++){
+    let ln=lines[i].trim();
+    if(ln==='.')continue;
+    ln=ln.replace(/\s{2,}/g,' ');
 
-                // === Full mode: แยก headline / meta / top link ===
-                if (mode === 'full') {
-                    if (!headlineFound && ln !== '') { headline = ln; headlineFound = true; continue; }
-                    if (!headlineFound) continue;
+    if(mode==='full'){
+      if(!headlineFound&&ln!==''){headline=ln;headlineFound=true;continue}
+      if(!headlineFound)continue;
+      if(!inBody&&(ln.startsWith('เรื่อง:')||ln.startsWith('เรื่อง :'))){author=ln.replace(/^เรื่อง\s*:/,'').trim();continue}
+      if(!inBody&&(ln.startsWith('ภาพ:')||ln.startsWith('ภาพ :'))){photographer=ln.replace(/^ภาพ\s*:/,'').trim();continue}
+      let pf=ln.replace(/\*/g,'').trim();
+      if(!inBody&&(pf.startsWith('http://')||pf.startsWith('https://'))){topLinks.push(pf);continue}
+    }
 
-                    if (!inBody && (ln.startsWith('เรื่อง:') || ln.startsWith('เรื่อง :'))) { author = ln.replace(/^เรื่อง\s*:/, '').trim(); continue; }
-                    if (!inBody && (ln.startsWith('ภาพ:') || ln.startsWith('ภาพ :'))) { photographer = ln.replace(/^ภาพ\s*:/, '').trim(); continue; }
+    let plain=ln.replace(/\*/g,'').trim();
+    let isUrlChk=plain.startsWith('http://')||plain.startsWith('https://');
+    if(ln===''&&bodyLines.length===0)continue;
+    inBody=true;
 
-                    let pf = ln.replace(/\*/g, '').trim();
-                    let uf = pf.startsWith('http://') || pf.startsWith('https://');
-                    if (!inBody && uf) { topLinks.push(pf); continue; }
-                }
+    if(ln===''){if(clOn)continue;if(!lastEmpty){bodyLines.push('');lastEmpty=true}continue}
+    lastEmpty=false;
 
-                // === Body processing (ทั้ง 2 โหมด) ===
-                let plain = ln.replace(/\*/g, '').trim();
-                let isUrlChk = plain.startsWith('http://') || plain.startsWith('https://');
+    if(mode==='full'){
+      let cm=ln.match(/^\*{0,2}ภาพ\s*:\s*\*{0,2}\s*(.+?)(\*{0,2})$/);
+      if(cm){photographer=cm[1].replace(/\*+/g,'').trim();logs.push(`  📷 Credit(L${i}): "${ln}" → "${photographer}"`);continue}
+    }
 
-                // ข้ามบรรทัดว่างก่อน body
-                if (ln === '' && bodyLines.length === 0) continue;
-                inBody = true;
+    let isH=isHintLn(plain),isP=isPicLn(ln),isRef=isUrlChk&&isRefUrl(plain),isU=!isRef&&isImgUrl(isUrlChk),isF=isFileLn(plain);
+    if(isH||isP||isU||isF){
+      if(!clOn)clStart=i;clOn=true;
+      if(isH)clHint=true;if(isP)clPic++;
+      if(isU){if(dD.checked)clUrls.add(plain);else clUrls.add(plain+'#'+clUrls.size)}
+      if(isF)clFile+=plain.split('/').map(p=>p.trim()).filter(Boolean).length;
+      continue;
+    }
+    if(isRef){flush();bodyLines.push(ln);continue}
+    flush();
 
-                // บรรทัดว่าง — ยุบซ้ำ
-                if (ln === '') {
-                    if (clOn) continue; // กลืนว่างใน cluster
-                    if (!lastWasEmpty) { bodyLines.push(''); lastWasEmpty = true; }
-                    continue;
-                }
-                lastWasEmpty = false;
+    let isHeading=ln.startsWith('**')&&ln.endsWith('**')&&!ln.startsWith('**ภาพ:**')&&!ln.startsWith('**ภาพ :**');
+    let isBH=ln.startsWith('• **')&&ln.endsWith('**')&&!ln.startsWith('• **ภาพ:**');
+    if(isHeading)ln='## '+ln;
+    else if(isBH)ln='## '+ln.substring(2).trim();
+    bodyLines.push(ln);
+  }
+  flush();
 
-                // --- เช็กเครดิตภาพท้ายข่าว (full mode) ---
-                // **ภาพ:** xxx หรือ ภาพ: xxx ที่อยู่ใน body → ดึงไปใส่ช่อง photographer
-                if (mode === 'full') {
-                    let creditMatch = ln.match(/^\*{0,2}ภาพ\s*:\s*\*{0,2}\s*(.+?)(\*{0,2})$/);
-                    if (creditMatch) {
-                        photographer = creditMatch[1].replace(/\*+/g, '').trim();
-                        logs.push(`  📷 Credit (L${i}): "${ln}" → photographer="${photographer}"`);
-                        continue;
-                    }
-                }
+  // Build body
+  let body='';
+  for(const l of bodyLines){if(l!=='')body+=l+'\n\n'}
+  body=body.trim();
 
-                // --- ตรวจจับภาพ ---
-                let isH = isHintLine(plain);
-                let isP = isPicLine(ln);
-                // URL ที่เป็นลิงก์อ้างอิง → ข้ามการตรวจจับภาพ
-                let isRef = isUrlChk && isReferenceUrl(plain);
-                let isU = !isRef && isImgUrl(isUrlChk);
-                let isF = isFilenameLine(plain);
+  // Build formatted output
+  let formatted='';
+  if(mode==='full'){
+    const upper=headline.toUpperCase();
+    const hasP=['UPDATE:','SHORT NEWS:','PHOTO ALBUM:','BREAKING:','NEWS:'].some(p=>upper.startsWith(p));
+    if(!hasP&&elPrefix.value!=='NONE')headline=elPrefix.value+': '+headline;
+    formatted+=elCat.value+'\n\n'+headline+'\n\nเรื่อง: '+author+'\n';
+    if(photographer)formatted+='ภาพ: '+photographer+'\n';
+    if(topLinks.length>0)formatted+='\n'+topLinks.join('\n')+'\n';
+    formatted+='\nBody Text:\n\n'+body;
+  }else{
+    formatted=body;
+  }
+  outputs.formatted=formatted;
 
-                if (isH || isP || isU || isF) {
-                    if (!clOn) clStart = i;
-                    clOn = true;
-                    if (isH) clHint = true;
-                    if (isP) clPic++;
-                    if (isU) {
-                        if (dDedup.checked) clUrls.add(plain);
-                        else clUrls.add(plain + '#' + clUrls.size);
-                    }
-                    if (isF) clFile += plain.split('/').map(p=>p.trim()).filter(Boolean).length;
-                    logs.push(`  L${i}: "${ln.substring(0,55)}" → h=${isH} p=${isP} u=${isU} f=${isF}${isRef?' [REF→skip]':''}`);
-                    continue;
-                }
+  // Extract headings from body for TOC
+  detectedHeadings=[];
+  for(const line of bodyLines){
+    const m=line.match(/^## \*\*(.+)\*\*$/);
+    if(m)detectedHeadings.push(m[1]);
+  }
 
-                // ถ้าเป็น reference URL → ปล่อยผ่านเป็นข้อความปกติ
-                if (isRef) {
-                    flush();
-                    logs.push(`  L${i}: "${ln.substring(0,55)}" → [REF URL kept]`);
-                    bodyLines.push(ln);
-                    continue;
-                }
+  // Build H2 code
+  const activeH2=detectedHeadings.filter((_,i)=>!removedH2.has(i));
+  const style=CI[ciCat]||CI.NEWS;
+  outputs.h2code=activeH2.map((h,i)=>`<h2 id="section${i+1}" style="${style}">${h}</h2>`).join('\n\n');
 
-                // ข้อความปกติ → flush cluster
-                flush();
+  // Build TOC block
+  const tocTitle=elTocTitle.value.trim()||'ประเด็นสำคัญ';
+  const tocItems=activeH2.map((h,i)=>`    <li style="margin:8px 0;overflow-wrap:break-word;word-break:normal;"><a href="#section${i+1}">${h}</a></li>`).join('\n');
+  outputs.toccode=activeH2.length?`<div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,0.12);max-width:600px;">
+  <div style="margin-bottom:12px;">
+    <h2 style="font-size:22px;font-weight:700;">${esc(tocTitle)}</h2>
+    <div style="height:6px;background-color:${ciColor[ciCat]||'#e62227'};margin-top:6px;width:100%;"></div>
+  </div>
+  <ul style="padding-left:20px;margin:0;list-style:disc;">
+${tocItems}
+  </ul>
+</div>`:'';
 
-                // Heading: **หัวข้อ** → ## **หัวข้อ**
-                let isHeading = ln.startsWith('**') && ln.endsWith('**') && !ln.startsWith('**ภาพ:**') && !ln.startsWith('**ภาพ :**');
-                let isBulletH = ln.startsWith('• **') && ln.endsWith('**') && !ln.startsWith('• **ภาพ:**');
-                if (isHeading) ln = '## ' + ln;
-                else if (isBulletH) ln = '## ' + ln.substring(2).trim();
+  // Build full output (formatted + TOC inserted after first paragraph + H2 replaced)
+  if(activeH2.length&&body){
+    let fullBody=body;
+    // Replace ## **heading** with styled <h2>
+    activeH2.forEach((h,i)=>{
+      const escaped=h.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      fullBody=fullBody.replace(new RegExp(`^## \\*\\*${escaped}\\*\\*$`,'m'),`<h2 id="section${i+1}" style="${style}">${h}</h2>`);
+    });
+    // Insert TOC after first paragraph
+    const parIdx=fullBody.indexOf('\n\n');
+    if(parIdx>-1){
+      outputs.fullcode=fullBody.substring(0,parIdx)+'\n\n'+outputs.toccode+'\n\n'+fullBody.substring(parIdx+2);
+    }else{
+      outputs.fullcode=outputs.toccode+'\n\n'+fullBody;
+    }
+  }else{
+    outputs.fullcode=formatted;
+  }
 
-                bodyLines.push(ln);
-            }
-            flush();
+  // Stats
+  const chars=formatted.length;
+  const words=formatted.trim().split(/\s+/).filter(w=>w.length>0).length;
+  $('stat-chars').textContent=chars.toLocaleString()+' อักษร / '+words.toLocaleString()+' คำ';
+  if(totalImgs>0){$('stat-imgs').textContent='🖼 '+totalImgs;$('stat-imgs').style.display=''}else{$('stat-imgs').style.display='none'}
+  if(detectedHeadings.length>0){$('stat-h2').textContent='H2: '+activeH2.length;$('stat-h2').style.display=''}else{$('stat-h2').style.display='none'}
 
-            // รวม body (บรรทัดว่างซ้ำถูกยุบไว้แล้ว)
-            let body = '';
-            for (const line of bodyLines) {
-                if (line !== '') body += line + '\n\n';
-            }
-            body = body.trim();
+  dbgLog.textContent=logs.length?logs.join('\n'):'(ไม่พบบล็อกรูปภาพ)';
+  renderOutTab();
+}
 
-            // สร้างผลลัพธ์
-            let result = '';
-            if (mode === 'full') {
-                const upper = headline.toUpperCase();
-                const hasPrefix = ['UPDATE:','SHORT NEWS:','PHOTO ALBUM:','BREAKING:','NEWS:'].some(p => upper.startsWith(p));
-                if (!hasPrefix && elPrefix.value !== 'NONE') headline = elPrefix.value + ': ' + headline;
-                result += elCat.value + '\n\n';
-                result += headline + '\n\n';
-                result += 'เรื่อง: ' + author + '\n';
-                if (photographer) result += 'ภาพ: ' + photographer + '\n';
-                if (topLinks.length > 0) result += '\n' + topLinks.join('\n') + '\n';
-                result += '\nBody Text:\n\n' + body;
-            } else {
-                result += body;
-            }
+// === Render output tab ===
+function renderOutTab(){
+  const body=$('out-body');
+  const t=activeOutTab;
+  document.querySelectorAll('.out-tab').forEach(tb=>tb.classList.toggle('active',tb.dataset.tab===t));
 
-            elOut.value = result;
-            debugLog.textContent = logs.length > 0 ? logs.join('\n') : '(ไม่พบบล็อกรูปภาพ)';
-            btnCopy.className = 'btn btn-copy ' + (result ? 'ready' : 'disabled');
+  if(!outputs.formatted&&t!=='formatted'){
+    body.innerHTML='<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#aeaeb2;font-size:13px;min-height:300px">วางข้อความด้านซ้ายก่อน</div>';
+    return;
+  }
 
-            // Stats
-            const chars = result.length;
-            const words = result.trim().split(/\s+/).filter(w => w.length > 0).length;
-            charCount.textContent = chars.toLocaleString() + ' อักษร / ' + words.toLocaleString() + ' คำ';
+  const copyBtn=(which,label)=>`<button class="btn btn-ghost" onclick="doCopy('${which}','${label}')">📋 Copy ${label}</button>`;
+  const fmtCode=s=>esc(s).replace(/\n/g,'<br>');
 
-            if (totalImgCount > 0) {
-                imgCount.textContent = '🖼 ' + totalImgCount + ' ภาพ';
-                imgCount.style.display = '';
-            } else {
-                imgCount.style.display = 'none';
-            }
-        };
+  if(t==='formatted'){
+    body.innerHTML=`
+      <div class="btn-bar">${copyBtn('formatted','ข้อความ')}</div>
+      <textarea class="dark-out" id="out-formatted" style="flex:1;min-height:300px">${esc(outputs.formatted)}</textarea>`;
+  }else if(t==='h2code'){
+    if(!detectedHeadings.length){
+      body.innerHTML='<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#aeaeb2;font-size:13px;gap:6px;min-height:300px"><div>ไม่พบ H2 ในเนื้อหา</div><small>ใช้ **หัวข้อ** ในต้นฉบับเพื่อสร้าง H2</small></div>';
+      return;
+    }
+    // H2 chip list
+    const chips=detectedHeadings.map((h,i)=>`
+      <div class="h2-chip ${removedH2.has(i)?'removed':''}">
+        <span class="num">${String(i+1).padStart(2,'0')}</span>
+        <span class="txt">${esc(h)}</span>
+        <span class="id">${removedH2.has(i)?'ข้าม':'section'+(i+1)}</span>
+        <button class="rm" onclick="toggleH2(${i})">${removedH2.has(i)?'+':'✕'}</button>
+      </div>`).join('');
+    body.innerHTML=`
+      <div style="font-size:11px;color:#6e6e73;margin-bottom:4px">H2 ที่ตรวจพบ — คลิก ✕ เพื่อข้าม</div>
+      <div style="display:flex;flex-direction:column;gap:5px">${chips}</div>
+      <div class="btn-bar" style="margin-top:8px">${copyBtn('h2code','H2 Code')}</div>
+      <div style="font-size:10px;font-weight:600;color:#aeaeb2;letter-spacing:1px;text-transform:uppercase;margin-top:4px">H2 HTML</div>
+      <div class="code-box">${fmtCode(outputs.h2code)}</div>`;
+  }else if(t==='toccode'){
+    if(!detectedHeadings.length||!outputs.toccode){
+      body.innerHTML='<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#aeaeb2;font-size:13px;min-height:300px">ไม่พบ H2 — ไม่มี TOC</div>';
+      return;
+    }
+    // TOC Preview
+    const activeH2=detectedHeadings.filter((_,i)=>!removedH2.has(i));
+    const previewItems=activeH2.map((h,i)=>`<li><a href="#section${i+1}">${esc(h)}</a></li>`).join('');
+    body.innerHTML=`
+      <div style="font-size:10px;font-weight:600;color:#aeaeb2;letter-spacing:1px;text-transform:uppercase">TOC Preview</div>
+      <div class="toc-preview">
+        <h2>${esc(elTocTitle.value.trim()||'ประเด็นสำคัญ')}</h2>
+        <div class="bar" style="background:${ciColor[ciCat]||'#e62227'}"></div>
+        <ul>${previewItems}</ul>
+      </div>
+      <div class="btn-bar">${copyBtn('toccode','TOC Block')}</div>
+      <div style="font-size:10px;font-weight:600;color:#aeaeb2;letter-spacing:1px;text-transform:uppercase;margin-top:4px">TOC HTML</div>
+      <div class="code-box">${fmtCode(outputs.toccode)}</div>`;
+  }else if(t==='fullcode'){
+    body.innerHTML=`
+      <div style="font-size:11px;color:#6e6e73;margin-bottom:4px">เนื้อหาทั้งหมด — TOC แทรกหลังย่อหน้าแรก + H2 มีแถบสีแล้ว</div>
+      <div class="btn-bar">${copyBtn('fullcode','รวมทั้งหมด')}</div>
+      <div class="code-box" style="flex:1">${fmtCode(outputs.fullcode)}</div>`;
+  }
+}
 
-        // === Copy ===
-        const doCopy = () => {
-            if (!elOut.value) return;
-            const text = elOut.value;
-            const done = () => {
-                btnCopy.className = 'btn btn-copy copied';
-                btnCopy.textContent = '✅ คัดลอกแล้ว!';
-                setTimeout(() => { btnCopy.className = 'btn btn-copy ready'; btnCopy.textContent = '📋 คัดลอก'; }, 2000);
-            };
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(done).catch(() => { fbCopy(text); done(); });
-            } else { fbCopy(text); done(); }
-        };
-        const fbCopy = (text) => {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            Object.assign(ta.style, { position:'fixed', top:0, left:0, opacity:0 });
-            document.body.appendChild(ta); ta.focus(); ta.select();
-            try { document.execCommand('copy'); } catch(e) {}
-            document.body.removeChild(ta);
-        };
+function toggleH2(idx){
+  if(removedH2.has(idx))removedH2.delete(idx);else removedH2.add(idx);
+  // Rebuild TOC/H2 outputs
+  const activeH2=detectedHeadings.filter((_,i)=>!removedH2.has(i));
+  const style=CI[ciCat]||CI.NEWS;
+  outputs.h2code=activeH2.map((h,i)=>`<h2 id="section${i+1}" style="${style}">${h}</h2>`).join('\n\n');
+  const tocTitle=elTocTitle.value.trim()||'ประเด็นสำคัญ';
+  const tocItems=activeH2.map((h,i)=>`    <li style="margin:8px 0;overflow-wrap:break-word;word-break:normal;"><a href="#section${i+1}">${h}</a></li>`).join('\n');
+  outputs.toccode=activeH2.length?`<div style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,0.12);max-width:600px;">
+  <div style="margin-bottom:12px;">
+    <h2 style="font-size:22px;font-weight:700;">${esc(tocTitle)}</h2>
+    <div style="height:6px;background-color:${ciColor[ciCat]||'#e62227'};margin-top:6px;width:100%;"></div>
+  </div>
+  <ul style="padding-left:20px;margin:0;list-style:disc;">
+${tocItems}
+  </ul>
+</div>`:'';
+  $('stat-h2').textContent='H2: '+activeH2.length;
+  renderOutTab();
+}
 
-        // === Output editable: แสดงปุ่ม Reformat เมื่อผู้ใช้แก้ output ===
-        elOut.addEventListener('input', () => {
-            if (!outputDirty) {
-                outputDirty = true;
-                btnReformat.style.display = '';
-            }
-        });
-        btnReformat.addEventListener('click', () => formatNews());
+// === Copy ===
+function doCopy(which,label){
+  const text=outputs[which];
+  if(!text)return;
+  const ok=()=>{showToast('✅ Copied '+label+' แล้ว!')};
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(ok).catch(()=>{fbCopy(text);ok()})}
+  else{fbCopy(text);ok()}
+}
+function fbCopy(t){const a=document.createElement('textarea');a.value=t;Object.assign(a.style,{position:'fixed',top:0,left:0,opacity:0});document.body.appendChild(a);a.focus();a.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(a)}
+function showToast(msg){$('toast-msg').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2200)}
 
-        // === Event Listeners ===
-        elCat.addEventListener('change', save);
-        elCat.addEventListener('input', save);
-        elAuthor.addEventListener('input', save);
-        elPrefix.addEventListener('change', save);
-        [dHint, dPic, dUrl, dFile, dDedup].forEach(el => el.addEventListener('change', save));
-        elRaw.addEventListener('input', formatNews);
-        btnCopy.addEventListener('click', doCopy);
-        btnClear.addEventListener('click', () => { if (confirm('ต้องการล้างข้อความทั้งหมด?')) { elRaw.value = ''; formatNews(); } });
-        tabFull.addEventListener('click', () => switchTab('full'));
-        tabContent.addEventListener('click', () => switchTab('content'));
+// === Events ===
+elRaw.addEventListener('input',runFormat);
+[elCat,elPrefix,elAuthor,elTocTitle].forEach(el=>el.addEventListener('input',saveSettings));
+elPrefix.addEventListener('change',saveSettings);
+[dH,dP,dU,dF,dD].forEach(el=>el.addEventListener('change',saveSettings));
 
-        // === Keyboard shortcut: Ctrl+Enter = copy ===
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                doCopy();
-            }
-        });
+$('out-tabs').addEventListener('click',e=>{
+  const tab=e.target.closest('.out-tab');
+  if(!tab)return;
+  activeOutTab=tab.dataset.tab;
+  renderOutTab();
+});
 
-        // === Init ===
-        load();
-        formatNews();
-    </script>
+$('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){elRaw.value='';runFormat()}};
+
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
+    e.preventDefault();
+    const labels={formatted:'ข้อความ',h2code:'H2 Code',toccode:'TOC Block',fullcode:'รวมทั้งหมด'};
+    doCopy(activeOutTab,labels[activeOutTab]||'');
+  }
+});
+
+// === Init ===
+loadSettings();
+runFormat();
+</script>
 </body>
 </html>

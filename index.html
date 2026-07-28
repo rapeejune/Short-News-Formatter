@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News Auto-Formatter</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -175,18 +177,48 @@
             let headline = '';
             let author = elAuthor.value;
             let photographer = '';
-            let links = [];
+            let topLinks = [];
             let bodyLines = [];
             let headlineFound = false;
             let inBody = false;
+
+            // ตัวแปรสำหรับกลุ่มบล็อกรูปภาพอัจฉริยะ (Smart Grouping)
+            let imgClusterActive = false;
+            let clusterPicCount = 0;
+            let clusterUrlCount = 0;
+            let clusterFileCount = 0;
+            let clusterHasHint = false;
+
+            // ฟังก์ชันคำนวณและพ่น .img1 ออกมา
+            const flushImageCluster = () => {
+                if (imgClusterActive) {
+                    // หาค่ามากที่สุดระหว่างจำนวนสัญลักษณ์, จำนวนลิงก์, หรือจำนวนชื่อไฟล์
+                    let imgCount = Math.max(
+                        clusterHasHint ? 1 : 0,
+                        clusterPicCount,
+                        clusterUrlCount,
+                        clusterFileCount
+                    );
+                    
+                    let finalCount = imgCount > 0 ? imgCount : 1;
+                    for (let k = 0; k < finalCount; k++) {
+                        bodyLines.push(`.img1`);
+                    }
+                    
+                    // รีเซ็ตค่า
+                    imgClusterActive = false;
+                    clusterPicCount = 0;
+                    clusterUrlCount = 0;
+                    clusterFileCount = 0;
+                    clusterHasHint = false;
+                }
+            };
 
             for (let i = 0; i < lines.length; i++) {
                 let lineTrimmed = lines[i].trim();
                 
                 // ลบจุดที่ใช้คั่นบรรทัด
-                if (lineTrimmed === '.') {
-                    continue;
-                }
+                if (lineTrimmed === '.') continue;
 
                 // Clean up multiple spaces
                 lineTrimmed = lineTrimmed.replace(/\s{2,}/g, ' ');
@@ -200,7 +232,7 @@
 
                 if (!headlineFound) continue;
 
-                // เช็ก Meta Data (ทำงานเฉพาะตอนยังไม่เข้า Body Text)
+                // เช็ก Meta Data
                 if (!inBody && (lineTrimmed.startsWith('เรื่อง:') || lineTrimmed.startsWith('เรื่อง :'))) {
                     author = lineTrimmed.replace(/^เรื่อง\s*:/, '').trim();
                     continue;
@@ -211,11 +243,11 @@
                 } 
                 
                 let plainText = lineTrimmed.replace(/\*/g, '').trim();
-                let isUrl = plainText.startsWith('http://') || plainText.startsWith('https://');
+                let isUrlCheck = plainText.startsWith('http://') || plainText.startsWith('https://');
 
                 // เช็กลิงก์หน้าปก (Top link)
-                if (!inBody && isUrl) {
-                    links.push(lineTrimmed);
+                if (!inBody && isUrlCheck) {
+                    topLinks.push(plainText);
                     continue;
                 }
 
@@ -224,96 +256,66 @@
                 
                 inBody = true; // ล็อกว่าเข้า Body แล้ว
 
+                // จัดการบรรทัดว่าง
                 if (lineTrimmed === '') {
-                    bodyLines.push('');
-                    continue;
-                }
-
-                // ข้ามคำสั่งขยะที่ใช้บอกตำแหน่งหรือการจัดวาง
-                let lineNoStars = plainText;
-                let isPlaceholderText = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป' || lineNoStars.includes('(วางรูป') || lineNoStars.includes('(แทรกรูป') || lineNoStars.includes('(วางภาพ'));
-                if (isPlaceholderText) {
-                    continue;
-                }
-
-                // --- ตรวจจับและแปลงจุดใส่รูป (Image Block) ---
-                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
-                
-                // ตรวจจับชื่อไฟล์รูปที่ไม่มีนามสกุลแต่รู้ว่าเป็นชื่อรูปภาพ (เช่น palanuson-XX, Sea Personal Pic 01)
-                // หรือชื่อไฟล์ที่มีนามสกุล (.jpg, .png ฯลฯ) ที่ไม่ใช่ URL
-                let hasImageExt = /\.(jpg|jpeg|png|webp|gif)$/i.test(lineTrimmed);
-                let isImageNamePattern = /^[a-zA-Z0-9\s_-]+(-\d+|\s\d+)$/i.test(lineTrimmed); // รองรับ pattern "word-12" หรือ "word 01"
-                let isPalanuson = lineTrimmed.toLowerCase().includes('palanuson');
-                
-                // เช็กเงื่อนไขว่าเป็นการระบุรูปภาพหรือไม่
-                let isImageRef = false;
-                
-                // 1. เป็น [📷 รูปที่ X]
-                if (isPicMarker) {
-                     isImageRef = true;
-                } 
-                // 2. เป็นลิงก์ URL
-                else if (isUrl) {
-                     isImageRef = true;
-                } 
-                // 3. เป็นชื่อไฟล์ขยะ หรือ pattern ของชื่อรูป 
-                // และต้องแน่ใจว่าไม่ใช่ประโยคเนื้อหายาวๆ
-                else if (!hasImageExt && (isImageNamePattern || isPalanuson) && lineTrimmed.split(' ').length <= 5) {
-                     isImageRef = true;
-                }
-                else if (hasImageExt && !isUrl) {
-                     isImageRef = true;
-                }
-
-                // ถ้าเจอการวางหลายรูปในบรรทัดเดียวคั่นด้วย / (เช่น Sea Personal Pic 01 / Sea Personal Pic 02)
-                let multiPicMatch = lineTrimmed.split('/');
-                if (!isImageRef && multiPicMatch.length > 1) {
-                    let allPartsArePics = true;
-                    for (let part of multiPicMatch) {
-                        let trimmedPart = part.trim();
-                        let isPartImagePattern = /^[a-zA-Z0-9\s_-]+(-\d+|\s\d+)$/i.test(trimmedPart) || trimmedPart.toLowerCase().includes('palanuson');
-                        let isPartHasExt = /\.(jpg|jpeg|png|webp|gif)$/i.test(trimmedPart);
-                        
-                        if (!(isPartImagePattern || isPartHasExt) || trimmedPart.split(' ').length > 5) {
-                            allPartsArePics = false;
-                            break;
-                        }
-                    }
-                    if (allPartsArePics) {
-                        isImageRef = true;
-                        // ถ้าเจอ 2 ชื่อ พ่น .img1 สองครั้ง
-                        for (let p=0; p < multiPicMatch.length; p++){
-                             bodyLines.push('.img1');
-                        }
+                    if (imgClusterActive) {
+                        continue; // ถ้าอยู่ในกลุ่มรูปภาพ ให้กลืนบรรทัดว่างทิ้งไปเลย (ยุบรวม)
+                    } else {
+                        bodyLines.push('');
                         continue;
                     }
                 }
 
-                // ถ้าวิเคราะห์แล้วว่าเป็นจุดแทรกรูป (ไม่ว่าจะรูปแบบไหน) พ่น .img1 ออกมาเดี่ยวๆ 1 ตัวเลย
-                if (isImageRef) {
-                     bodyLines.push('.img1');
-                     continue;
+                // --- ตรวจจับบล็อกรูปภาพ ---
+                let lineNoStars = plainText;
+                let isHint = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป' || lineNoStars.includes('(วางรูป') || lineNoStars.includes('(แทรกรูป') || lineNoStars.includes('(วางภาพ'));
+                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
+                let isUrl = isUrlCheck;
+                
+                // เช็กชื่อไฟล์ (รองรับกรณีเขียน 2 ไฟล์คั่นด้วย / )
+                let parts = lineNoStars.split('/').map(p => p.trim());
+                let fileCount = 0;
+                let validPartsCount = 0;
+                for(let part of parts) {
+                    if (part) {
+                        validPartsCount++;
+                        if (/\.(jpg|jpeg|png|webp|gif)$/i.test(part) || /^[a-zA-Z0-9\s_-]+(-\d+|\s\d+)$/i.test(part) || part.toLowerCase().includes('palanuson')) {
+                            fileCount++;
+                        }
+                    }
+                }
+                let isFilename = (validPartsCount > 0 && fileCount === validPartsCount);
+
+                // ถ้าเจอบรรทัดที่เกี่ยวกับรูป ให้นำไปเก็บในกลุ่ม
+                if (isHint || isPicMarker || isUrl || isFilename) {
+                    imgClusterActive = true;
+                    if (isHint) clusterHasHint = true;
+                    if (isPicMarker) clusterPicCount++;
+                    if (isUrl) clusterUrlCount++;
+                    if (isFilename) clusterFileCount += fileCount;
+                    continue; // ข้ามไปอ่านบรรทัดถัดไปเพื่อยุบรวม
                 }
 
+                // เมื่อเจอ "ข้อความปกติ" (ไม่ใช่รูปแล้ว) ให้พ่นรูปที่สะสมไว้ออกมาก่อน
+                flushImageCluster();
+
                 // จัดการ Heading (เริ่มและจบด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
-                if (lineTrimmed.startsWith('**') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('**ภาพ:**')) {
+                let isHeading = lineTrimmed.startsWith('**') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('**ภาพ:**');
+                let isBulletHeading = lineTrimmed.startsWith('• **') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('• **ภาพ:**');
+
+                if (isHeading) {
                     lineTrimmed = '## ' + lineTrimmed;
-                }
-                
-                // จัดการ Bullet List ที่เป็นตัวหนา
-                if (lineTrimmed.startsWith('• **') && lineTrimmed.endsWith('**')) {
-                    lineTrimmed = '## ' + lineTrimmed.substring(2).trim();
+                } else if (isBulletHeading) {
+                    lineTrimmed = '## ' + lineTrimmed.substring(2).trim(); // ลบ Bullet ออก
                 }
 
                 bodyLines.push(lineTrimmed);
             }
 
-            // ตัดบรรทัดว่างส่วนท้ายทิ้ง
-            while (bodyLines.length > 0 && bodyLines[bodyLines.length - 1] === '') {
-                bodyLines.pop();
-            }
+            // ถ้าจบบทความแล้วยังบล็อกภาพค้างอยู่ ให้พ่นออกมา
+            flushImageCluster();
 
-            // จัดฟอร์แมตเนื้อหาแบบมีเว้นบรรทัด
+            // จัดการเนื้อหา เพิ่มบรรทัดว่างคั่นย่อหน้า
             let formattedBody = '';
             for(let i=0; i < bodyLines.length; i++) {
                 const line = bodyLines[i];
@@ -323,11 +325,10 @@
             }
             formattedBody = formattedBody.trim();
 
-            // --- ประกอบร่างข้อความ (แยกตามโหมด Tab) ---
             let result = '';
 
             if (currentMode === 'full') {
-                // จัดการ Prefix พาดหัว
+                // โหมดจัดเต็มลงเว็บ
                 const upperHeadline = headline.toUpperCase();
                 const hasExistingPrefix = 
                     upperHeadline.startsWith('UPDATE:') || 
@@ -345,8 +346,8 @@
                 result += `เรื่อง: ${author}\n`;
                 if (photographer) result += `ภาพ: ${photographer}\n`;
                 
-                if (links.length > 0) {
-                    result += `\n${links.join('\n')}\n`;
+                if (topLinks.length > 0) {
+                    result += `\n${topLinks.join('\n')}\n`;
                 }
                 
                 result += `\nBody Text:\n\n`; 
@@ -354,7 +355,7 @@
             } else {
                 // โหมดจัดเฉพาะเนื้อหา (Content Only)
                 if (headline) result += `${headline}\n\n`;
-                if (links.length > 0) result += `${links.join('\n')}\n\n`;
+                if (topLinks.length > 0) result += `${topLinks.join('\n')}\n\n`;
                 result += formattedBody;
             }
 

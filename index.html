@@ -4,107 +4,174 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News Auto-Formatter</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body class="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; padding: 16px; line-height: 1.5; }
+        .container { max-width: 1152px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 
-    <div class="max-w-6xl mx-auto space-y-6">
-        
+        /* Header */
+        .header { background: #fff; padding: 20px 24px; border-radius: 16px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 20px; font-weight: 700; color: #1e3a5f; }
+        .header p { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .btn-clear { font-size: 12px; background: #fef2f2; color: #dc2626; border: none; padding: 5px 12px; border-radius: 99px; cursor: pointer; }
+        .btn-clear:hover { background: #fee2e2; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; background: rgba(226,232,240,0.5); padding: 4px; border-radius: 8px; width: fit-content; }
+        .tab { padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 6px; border: none; cursor: pointer; background: transparent; color: #64748b; transition: all .15s; }
+        .tab:hover { background: rgba(226,232,240,0.5); color: #1e293b; }
+        .tab.active { background: #fff; color: #1d4ed8; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+        /* Settings */
+        .settings { background: #fff; padding: 14px 18px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+        .settings.hidden { display: none; }
+        .settings label, .img-panel label { font-size: 13px; font-weight: 500; color: #475569; }
+        .settings select, .settings input[type="text"] { font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; outline: none; }
+        .settings select:focus, .settings input[type="text"]:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+
+        /* Image detection panel */
+        .img-panel { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .img-panel summary { padding: 14px 18px; cursor: pointer; font-size: 13px; font-weight: 500; color: #475569; user-select: none; list-style: none; display: flex; align-items: center; gap: 8px; }
+        .img-panel summary::-webkit-details-marker { display: none; }
+        .img-panel summary::before { content: '▶'; font-size: 10px; color: #94a3b8; transition: transform .15s; }
+        .img-panel[open] summary::before { transform: rotate(90deg); }
+        .img-panel .panel-body { padding: 4px 18px 16px; border-top: 1px solid #f1f5f9; }
+        .img-panel .hint { font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
+        .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        @media (max-width: 640px) { .check-grid { grid-template-columns: 1fr; } }
+        .check-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 8px; cursor: pointer; }
+        .check-item:hover { background: #f8fafc; }
+        .check-item input[type="checkbox"] { margin-top: 2px; accent-color: #3b82f6; }
+        .check-item .name { font-size: 13px; font-weight: 500; color: #334155; }
+        .check-item .desc { font-size: 11px; color: #94a3b8; }
+        .dedup-row { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid #f8fafc; margin-top: 4px; font-size: 13px; color: #475569; cursor: pointer; }
+
+        /* Grid layout */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .col { display: flex; flex-direction: column; gap: 6px; }
+        .col-label { font-size: 14px; font-weight: 600; color: #475569; display: flex; justify-content: space-between; align-items: flex-end; }
+        .col-label .output-label { color: #1d4ed8; display: flex; align-items: center; gap: 6px; }
+        .badge { font-size: 11px; color: #94a3b8; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 400; }
+
+        /* Textareas */
+        textarea { width: 100%; min-height: 400px; padding: 14px; border-radius: 12px; border: 1px solid #cbd5e1; outline: none; resize: none; font-size: 13px; line-height: 1.7; font-family: inherit; }
+        textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+        textarea.output { background: #0f172a; color: #e2e8f0; border: none; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding-bottom: 56px; }
+
+        /* Copy button */
+        .output-wrap { position: relative; flex: 1; display: flex; flex-direction: column; }
+        .btn-copy { position: absolute; bottom: 14px; right: 14px; display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all .15s; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .btn-copy.disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+        .btn-copy.ready { background: #2563eb; color: #fff; }
+        .btn-copy.ready:hover { background: #1d4ed8; }
+        .btn-copy.copied { background: #16a34a; color: #fff; }
+
+        /* Debug */
+        .debug-panel summary { font-size: 12px; color: #94a3b8; cursor: pointer; user-select: none; }
+        .debug-panel pre { margin-top: 8px; padding: 10px; background: #f1f5f9; border-radius: 8px; font-size: 11px; color: #475569; font-family: monospace; overflow: auto; max-height: 200px; white-space: pre-wrap; }
+
+        /* Footer hint */
+        .hint-footer { text-align: right; font-size: 13px; color: #94a3b8; grid-column: 1 / -1; }
+        .hint-footer kbd { background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 6px; font-size: 11px; color: #475569; }
+        .field-group { display: flex; align-items: center; gap: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+
         <!-- Header -->
-        <header class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+        <div class="header">
             <div>
-                <h1 class="text-2xl font-bold text-blue-900 flex items-center gap-2">
-                    <i data-lucide="file-text" class="text-blue-600"></i>
-                    News Auto-Formatter
-                </h1>
-                <p class="text-gray-500 text-sm mt-1">วางข้อความดิบจาก Line ระบบจะจัดฟอร์แมตให้พร้อมลงเว็บทันที</p>
+                <h1>📰 News Auto-Formatter</h1>
+                <p>วางข้อความดิบจาก Line ระบบจะจัดฟอร์แมตให้พร้อมลงเว็บทันที</p>
             </div>
-            <div class="hidden md:flex gap-2">
-                <button id="btn-clear-all" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1 rounded-full transition flex items-center gap-1">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> ล้างหน้าจอ
-                </button>
-            </div>
-        </header>
+            <button id="btn-clear-all" class="btn-clear">🗑 ล้างหน้าจอ</button>
+        </div>
 
         <!-- Tabs -->
-        <div class="flex space-x-1 bg-gray-200/50 p-1 rounded-lg w-max">
-            <button id="tab-full" class="px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-700 transition-all">
-                ฟอร์แมตลงเว็บ (เต็มรูปแบบ)
-            </button>
-            <button id="tab-content" class="px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all">
-                จัดเฉพาะเนื้อหา (Content Only)
-            </button>
+        <div class="tabs">
+            <button id="tab-full" class="tab active">ฟอร์แมตลงเว็บ (เต็มรูปแบบ)</button>
+            <button id="tab-content" class="tab">จัดเฉพาะเนื้อหา (Content Only)</button>
         </div>
 
         <!-- Settings Bar -->
-        <div id="settings-bar" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center transition-all">
-            <i data-lucide="settings" class="text-gray-400 w-5 h-5"></i>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-600">หมวดหมู่:</label>
-                <select id="input-category" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-48">
+        <div id="settings-bar" class="settings">
+            <span style="color:#94a3b8">⚙️</span>
+            <div class="field-group">
+                <label>หมวดหมู่:</label>
+                <select id="input-category" style="width:180px">
                     <option value="NEWS / POLITICS">NEWS / POLITICS</option>
                     <option value="NEWS / THAILAND">NEWS / THAILAND</option>
                 </select>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-600">พาดหัวเริ่ม:</label>
-                <select id="select-prefix" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none">
+            <div class="field-group">
+                <label>พาดหัวเริ่ม:</label>
+                <select id="select-prefix">
                     <option value="UPDATE">UPDATE</option>
                     <option value="SHORT NEWS">SHORT NEWS</option>
                     <option value="PHOTO ALBUM">PHOTO ALBUM</option>
                     <option value="NONE">ไม่ใส่</option>
                 </select>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium text-gray-600">ผู้เขียน:</label>
-                <input type="text" id="input-author" class="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none w-48">
+            <div class="field-group">
+                <label>ผู้เขียน:</label>
+                <input type="text" id="input-author" style="width:180px">
             </div>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-6">
-            <!-- Input Area -->
-            <div class="flex flex-col h-full space-y-2">
-                <label class="font-semibold text-gray-700 flex justify-between items-end">
-                    <span>ข้อความต้นฉบับ (Raw Text)</span>
-                </label>
-                <textarea id="text-raw" placeholder="วางข้อความที่นี่..." class="flex-1 min-h-[400px] w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none shadow-inner text-sm leading-relaxed"></textarea>
+        <!-- Image Detection Settings -->
+        <details class="img-panel" id="img-settings-panel">
+            <summary>🖼️ ตั้งค่าการตรวจจับภาพ <span style="font-size:11px;color:#94a3b8;font-weight:400;margin-left:4px">(คลิกเพื่อปรับ)</span></summary>
+            <div class="panel-body">
+                <p class="hint">เลือกรูปแบบที่นักเขียนใช้บอกตำแหน่งภาพ — ระบบจะรวมบรรทัดที่ติดกันเป็น 1 บล็อก แล้วนับจำนวนภาพจากสัญญาณที่มากที่สุด</p>
+                <div class="check-grid">
+                    <label class="check-item"><input type="checkbox" id="detect-hint" checked>
+                        <div><div class="name">คำบอก "แทรกภาพ/แทรกรูป"</div><div class="desc">เช่น แทรกภาพ, (วางรูป), (แทรกรูป)</div></div>
+                    </label>
+                    <label class="check-item"><input type="checkbox" id="detect-pic-marker" checked>
+                        <div><div class="name">มาร์กเกอร์ [📷 รูปที่ N]</div><div class="desc">เช่น [📷 รูปที่ 1], [รูปที่ 2]</div></div>
+                    </label>
+                    <label class="check-item"><input type="checkbox" id="detect-url" checked>
+                        <div><div class="name">ลิงก์ URL (Drive, etc.)</div><div class="desc">เช่น https://drive.google.com/...</div></div>
+                    </label>
+                    <label class="check-item"><input type="checkbox" id="detect-filename" checked>
+                        <div><div class="name">ชื่อไฟล์ภาพ</div><div class="desc">เช่น IMG-01.jpg, palanuson-03, cover.png</div></div>
+                    </label>
+                </div>
+                <label class="dedup-row"><input type="checkbox" id="detect-dedup-url" checked> ตัด URL ซ้ำ (Deduplicate)</label>
+            </div>
+        </details>
+
+        <!-- Main Grid -->
+        <div class="grid">
+            <div class="col">
+                <div class="col-label"><span>ข้อความต้นฉบับ (Raw Text)</span></div>
+                <textarea id="text-raw" placeholder="วางข้อความที่นี่..."></textarea>
+            </div>
+            <div class="col">
+                <div class="col-label">
+                    <span class="output-label">ผลลัพธ์พร้อมใช้งาน →</span>
+                    <span class="badge" id="char-count">0 อักษร / 0 คำ</span>
+                </div>
+                <div class="output-wrap">
+                    <textarea id="text-formatted" class="output" readonly placeholder="ข้อความที่จัดฟอร์แมตแล้วจะแสดงที่นี่..."></textarea>
+                    <button id="btn-copy" class="btn-copy disabled">📋 คัดลอก (Copy)</button>
+                </div>
             </div>
 
-            <!-- Output Area -->
-            <div class="flex flex-col h-full space-y-2 relative">
-                <label class="font-semibold text-gray-700 flex justify-between items-end">
-                    <span class="flex items-center gap-2 text-blue-700">
-                        ผลลัพธ์พร้อมใช้งาน <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                    </span>
-                    <span class="text-xs text-gray-500 flex items-center gap-1 font-normal bg-gray-100 px-2 py-1 rounded">
-                        <i data-lucide="bar-chart-2" class="w-3 h-3"></i> 
-                        <span id="char-count">0 อักษร / 0 คำ</span>
-                    </span>
-                </label>
-                <textarea id="text-formatted" readonly placeholder="ข้อความที่จัดฟอร์แมตแล้วจะแสดงที่นี่..." class="flex-1 min-h-[400px] w-full p-4 bg-gray-900 text-gray-100 rounded-xl outline-none resize-none shadow-lg font-mono text-sm leading-relaxed pb-16"></textarea>
-                
-                <button id="btn-copy" disabled class="absolute bottom-6 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-gray-700 text-gray-500 cursor-not-allowed">
-                    <i data-lucide="copy" id="icon-copy" class="w-4 h-4"></i>
-                    <i data-lucide="check" id="icon-check" class="w-4 h-4 hidden"></i>
-                    <span id="text-copy-status">คัดลอก (Copy)</span>
-                </button>
-            </div>
-            
-            <!-- Hint Message -->
-            <div class="col-span-1 md:col-span-2 text-right">
-                <p class="text-sm text-gray-500">
-                    💡 <span class="font-semibold">ทริค:</span> ถ้านำไปวางในเว็บแล้วติดตัวหนา แนะนำให้กด <kbd class="bg-gray-200 border border-gray-300 rounded px-1.5 py-0.5 text-xs text-gray-700">Ctrl/Cmd + Shift + V</kbd> เพื่อวางแบบล้างฟอร์แมต
-                </p>
+            <!-- Debug -->
+            <details class="debug-panel" style="grid-column:1/-1">
+                <summary>🔍 ดู Log การตรวจจับภาพ (Debug)</summary>
+                <pre id="debug-log"></pre>
+            </details>
+
+            <div class="hint-footer">
+                💡 <strong>ทริค:</strong> ถ้านำไปวางในเว็บแล้วติดตัวหนา แนะนำให้กด <kbd>Ctrl/Cmd + Shift + V</kbd> เพื่อวางแบบล้างฟอร์แมต
             </div>
         </div>
-
     </div>
 
-    <!-- JavaScript Logic -->
     <script>
         // DOM Elements
         const elRaw = document.getElementById('text-raw');
@@ -115,338 +182,255 @@
         const btnCopy = document.getElementById('btn-copy');
         const btnClearAll = document.getElementById('btn-clear-all');
         const charCountText = document.getElementById('char-count');
-        const iconCopy = document.getElementById('icon-copy');
-        const iconCheck = document.getElementById('icon-check');
-        const textCopyStatus = document.getElementById('text-copy-status');
-        
-        // Tabs
+
         const tabFull = document.getElementById('tab-full');
         const tabContent = document.getElementById('tab-content');
         const settingsBar = document.getElementById('settings-bar');
 
-        let currentMode = 'full'; // 'full' or 'content'
+        const detectHint = document.getElementById('detect-hint');
+        const detectPicMarker = document.getElementById('detect-pic-marker');
+        const detectUrl = document.getElementById('detect-url');
+        const detectFilename = document.getElementById('detect-filename');
+        const detectDedupUrl = document.getElementById('detect-dedup-url');
+        const debugLog = document.getElementById('debug-log');
 
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        let currentMode = 'full';
 
-        // Load settings from LocalStorage
+        // Safe storage (localStorage อาจถูกบล็อกใน sandbox)
+        const mem = {};
+        const sGet = (k) => { try { return localStorage.getItem(k); } catch(e) { return mem[k] || null; } };
+        const sSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e) { mem[k] = v; } };
+
         const loadSettings = () => {
-            elCategory.value = localStorage.getItem('news_category') || 'NEWS / POLITICS';
-            elAuthor.value = localStorage.getItem('news_author') || 'THE STANDARD TEAM';
-            elPrefix.value = localStorage.getItem('news_prefix') || 'UPDATE';
+            elCategory.value = sGet('nf_cat') || 'NEWS / POLITICS';
+            elAuthor.value = sGet('nf_author') || 'THE STANDARD TEAM';
+            elPrefix.value = sGet('nf_prefix') || 'UPDATE';
+            let img = {};
+            try { img = JSON.parse(sGet('nf_img') || '{}'); } catch(e) {}
+            detectHint.checked = img.h !== false;
+            detectPicMarker.checked = img.p !== false;
+            detectUrl.checked = img.u !== false;
+            detectFilename.checked = img.f !== false;
+            detectDedupUrl.checked = img.d !== false;
         };
 
-        // Save settings to LocalStorage
         const saveSettings = () => {
-            localStorage.setItem('news_category', elCategory.value);
-            localStorage.setItem('news_author', elAuthor.value);
-            localStorage.setItem('news_prefix', elPrefix.value);
+            sSet('nf_cat', elCategory.value);
+            sSet('nf_author', elAuthor.value);
+            sSet('nf_prefix', elPrefix.value);
+            sSet('nf_img', JSON.stringify({ h: detectHint.checked, p: detectPicMarker.checked, u: detectUrl.checked, f: detectFilename.checked, d: detectDedupUrl.checked }));
             formatNews();
         };
 
-        // Switch Tabs
+        // Tab switching
         const switchTab = (mode) => {
             currentMode = mode;
-            if (mode === 'full') {
-                tabFull.className = "px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-700 transition-all";
-                tabContent.className = "px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all";
-                settingsBar.classList.remove('hidden');
-                settingsBar.classList.add('flex');
-            } else {
-                tabContent.className = "px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-blue-700 transition-all";
-                tabFull.className = "px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-200/50 transition-all";
-                settingsBar.classList.add('hidden');
-                settingsBar.classList.remove('flex');
-            }
+            tabFull.className = 'tab' + (mode === 'full' ? ' active' : '');
+            tabContent.className = 'tab' + (mode === 'content' ? ' active' : '');
+            settingsBar.className = mode === 'full' ? 'settings' : 'settings hidden';
             formatNews();
         };
 
-        // Main Formatter Function
+        // Image detection helpers
+        const checkIsHint = (s) => detectHint.checked && (s === 'แทรกภาพ' || s === 'แทรกรูป' || s.includes('(วางรูป') || s.includes('(แทรกรูป') || s.includes('(วางภาพ'));
+        const checkIsPicMarker = (s) => detectPicMarker.checked && s.startsWith('[') && s.includes('รูปที่');
+        const checkIsImageUrl = (b) => detectUrl.checked && b;
+
+        const checkIsFilename = (lineNoStars) => {
+            if (!detectFilename.checked) return false;
+            const parts = lineNoStars.split('/').map(p => p.trim());
+            let fileCount = 0, validCount = 0;
+            for (const part of parts) {
+                if (!part) continue;
+                validCount++;
+                if (/\.(jpg|jpeg|png|webp|gif|heic|heif|tiff?)$/i.test(part)) { fileCount++; continue; }
+                if (part.toLowerCase().includes('palanuson')) { fileCount++; continue; }
+                if (/^(IMG|DSC|DJI|DCIM|PHOTO|PIC|COVER|THUMB|HERO|BANNER)[_-]\d/.test(part) || /^(Screenshot|Screen\s?Shot)[_\s-]\d/i.test(part)) { fileCount++; continue; }
+            }
+            return validCount > 0 && fileCount === validCount;
+        };
+
+        // Main formatter
         const formatNews = () => {
             const rawText = elRaw.value;
+            const logs = [];
 
             if (!rawText.trim()) {
                 elFormatted.value = '';
-                charCountText.innerText = `0 อักษร / 0 คำ`;
-                btnCopy.disabled = true;
-                btnCopy.className = 'absolute bottom-6 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-gray-700 text-gray-500 cursor-not-allowed';
+                charCountText.textContent = '0 อักษร / 0 คำ';
+                debugLog.textContent = '';
+                btnCopy.className = 'btn-copy disabled';
                 return;
             }
 
             const lines = rawText.split('\n');
-            let headline = '';
-            let author = elAuthor.value;
-            let photographer = '';
-            let topLinks = [];
-            let bodyLines = [];
-            let headlineFound = false;
-            let inBody = false;
+            let headline = '', author = elAuthor.value, photographer = '';
+            let topLinks = [], bodyLines = [];
+            let headlineFound = false, inBody = false;
 
-            // ตัวแปรสำหรับกลุ่มบล็อกรูปภาพอัจฉริยะ (Smart Grouping)
-            let imgClusterActive = false;
-            let clusterPicCount = 0;
-            let clusterUrlCount = 0;
-            let clusterFileCount = 0;
-            let clusterHasHint = false;
+            // Image cluster state
+            let clActive = false, clPic = 0, clUrls = new Set(), clFile = 0, clHint = false, clStart = -1;
 
-            // ฟังก์ชันคำนวณและพ่น .img1 ออกมา
-            const flushImageCluster = () => {
-                if (imgClusterActive) {
-                    // หาค่ามากที่สุดระหว่างจำนวนสัญลักษณ์, จำนวนลิงก์, หรือจำนวนชื่อไฟล์
-                    let imgCount = Math.max(
-                        clusterHasHint ? 1 : 0,
-                        clusterPicCount,
-                        clusterUrlCount,
-                        clusterFileCount
-                    );
-                    
-                    let finalCount = imgCount > 0 ? imgCount : 1;
-                    for (let k = 0; k < finalCount; k++) {
-                        bodyLines.push(`.img1`);
-                    }
-                    
-                    // รีเซ็ตค่า
-                    imgClusterActive = false;
-                    clusterPicCount = 0;
-                    clusterUrlCount = 0;
-                    clusterFileCount = 0;
-                    clusterHasHint = false;
-                }
+            const flush = () => {
+                if (!clActive) return;
+                const urlCount = clUrls.size;
+                const imgCount = Math.max(clHint ? 1 : 0, clPic, urlCount, clFile);
+                const final = imgCount > 0 ? imgCount : 1;
+                logs.push(`  📸 Cluster (line ${clStart}): hint=${clHint}, pic=${clPic}, url=${urlCount}, file=${clFile} → .img1 ×${final}`);
+                for (let k = 0; k < final; k++) bodyLines.push('.img1');
+                clActive = false; clPic = 0; clUrls = new Set(); clFile = 0; clHint = false; clStart = -1;
             };
 
             for (let i = 0; i < lines.length; i++) {
-                let lineTrimmed = lines[i].trim();
-                
-                // ลบจุดที่ใช้คั่นบรรทัด
-                if (lineTrimmed === '.') continue;
+                let ln = lines[i].trim();
+                if (ln === '.') continue;
+                ln = ln.replace(/\s{2,}/g, ' ');
 
-                // Clean up multiple spaces
-                lineTrimmed = lineTrimmed.replace(/\s{2,}/g, ' ');
+                // === โหมดเต็มรูปแบบ: แยกพาดหัว, เรื่อง, ภาพ, top link ===
+                if (currentMode === 'full') {
+                    if (!headlineFound && ln !== '') { headline = ln; headlineFound = true; continue; }
+                    if (!headlineFound) continue;
 
-                // หาพาดหัว
-                if (!headlineFound && lineTrimmed !== '') {
-                    headline = lineTrimmed;
-                    headlineFound = true;
+                    if (!inBody && (ln.startsWith('เรื่อง:') || ln.startsWith('เรื่อง :'))) { author = ln.replace(/^เรื่อง\s*:/, '').trim(); continue; }
+                    if (!inBody && (ln.startsWith('ภาพ:') || ln.startsWith('ภาพ :'))) { photographer = ln.replace(/^ภาพ\s*:/, '').trim(); continue; }
+
+                    let plainFull = ln.replace(/\*/g, '').trim();
+                    let isUrlFull = plainFull.startsWith('http://') || plainFull.startsWith('https://');
+                    if (!inBody && isUrlFull) { topLinks.push(plainFull); continue; }
+                }
+
+                // === ทั้ง 2 โหมด: ประมวลผล body ===
+                let plain = ln.replace(/\*/g, '').trim();
+                let isUrlChk = plain.startsWith('http://') || plain.startsWith('https://');
+
+                // ข้ามบรรทัดว่างก่อน body
+                if (ln === '' && bodyLines.length === 0) continue;
+                inBody = true;
+
+                // บรรทัดว่าง
+                if (ln === '') {
+                    if (clActive) continue; // กลืนว่างใน cluster
+                    bodyLines.push('');
                     continue;
                 }
 
-                if (!headlineFound) continue;
+                // ตรวจจับภาพ
+                let isH = checkIsHint(plain);
+                let isP = checkIsPicMarker(ln);
+                let isU = checkIsImageUrl(isUrlChk);
+                let isF = checkIsFilename(plain);
 
-                // เช็ก Meta Data
-                if (!inBody && (lineTrimmed.startsWith('เรื่อง:') || lineTrimmed.startsWith('เรื่อง :'))) {
-                    author = lineTrimmed.replace(/^เรื่อง\s*:/, '').trim();
-                    continue;
-                } 
-                if (!inBody && (lineTrimmed.startsWith('ภาพ:') || lineTrimmed.startsWith('ภาพ :'))) {
-                    photographer = lineTrimmed.replace(/^ภาพ\s*:/, '').trim();
-                    continue;
-                } 
-                
-                let plainText = lineTrimmed.replace(/\*/g, '').trim();
-                let isUrlCheck = plainText.startsWith('http://') || plainText.startsWith('https://');
-
-                // เช็กลิงก์หน้าปก (Top link)
-                if (!inBody && isUrlCheck) {
-                    topLinks.push(plainText);
-                    continue;
-                }
-
-                // ถ้าไม่ใช่ Meta Data หรือ Top Link ถือว่าเข้าสู่ Body Text แล้ว
-                if (lineTrimmed === '' && bodyLines.length === 0) continue;
-                
-                inBody = true; // ล็อกว่าเข้า Body แล้ว
-
-                // จัดการบรรทัดว่าง
-                if (lineTrimmed === '') {
-                    if (imgClusterActive) {
-                        continue; // ถ้าอยู่ในกลุ่มรูปภาพ ให้กลืนบรรทัดว่างทิ้งไปเลย (ยุบรวม)
-                    } else {
-                        bodyLines.push('');
-                        continue;
+                if (isH || isP || isU || isF) {
+                    if (!clActive) clStart = i;
+                    clActive = true;
+                    if (isH) clHint = true;
+                    if (isP) clPic++;
+                    if (isU) {
+                        if (detectDedupUrl.checked) clUrls.add(plain);
+                        else clUrls.add(plain + '#' + clUrls.size);
                     }
-                }
-
-                // --- ตรวจจับบล็อกรูปภาพ ---
-                let lineNoStars = plainText;
-                let isHint = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป' || lineNoStars.includes('(วางรูป') || lineNoStars.includes('(แทรกรูป') || lineNoStars.includes('(วางภาพ'));
-                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
-                let isUrl = isUrlCheck;
-                
-                // เช็กชื่อไฟล์ (รองรับกรณีเขียน 2 ไฟล์คั่นด้วย / )
-                let parts = lineNoStars.split('/').map(p => p.trim());
-                let fileCount = 0;
-                let validPartsCount = 0;
-                for(let part of parts) {
-                    if (part) {
-                        validPartsCount++;
-                        if (/\.(jpg|jpeg|png|webp|gif)$/i.test(part) || /^[a-zA-Z0-9\s_-]+(-\d+|\s\d+)$/i.test(part) || part.toLowerCase().includes('palanuson')) {
-                            fileCount++;
-                        }
+                    if (isF) {
+                        clFile += plain.split('/').map(p => p.trim()).filter(Boolean).length;
                     }
-                }
-                let isFilename = (validPartsCount > 0 && fileCount === validPartsCount);
-
-                // ถ้าเจอบรรทัดที่เกี่ยวกับรูป ให้นำไปเก็บในกลุ่ม
-                if (isHint || isPicMarker || isUrl || isFilename) {
-                    imgClusterActive = true;
-                    if (isHint) clusterHasHint = true;
-                    if (isPicMarker) clusterPicCount++;
-                    if (isUrl) clusterUrlCount++;
-                    if (isFilename) clusterFileCount += fileCount;
-                    continue; // ข้ามไปอ่านบรรทัดถัดไปเพื่อยุบรวม
+                    logs.push(`  L${i}: "${ln.substring(0, 50)}" → h=${isH} p=${isP} u=${isU} f=${isF}`);
+                    continue;
                 }
 
-                // เมื่อเจอ "ข้อความปกติ" (ไม่ใช่รูปแล้ว) ให้พ่นรูปที่สะสมไว้ออกมาก่อน
-                flushImageCluster();
+                // ข้อความปกติ → flush cluster ก่อน
+                flush();
 
-                // จัดการ Heading (เริ่มและจบด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
-                let isHeading = lineTrimmed.startsWith('**') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('**ภาพ:**');
-                let isBulletHeading = lineTrimmed.startsWith('• **') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('• **ภาพ:**');
+                // Heading: **หัวข้อ** → ## **หัวข้อ** (เติม ## นำหน้า คง ** ไว้)
+                let isHeading = ln.startsWith('**') && ln.endsWith('**') && !ln.startsWith('**ภาพ:**');
+                let isBulletH = ln.startsWith('• **') && ln.endsWith('**') && !ln.startsWith('• **ภาพ:**');
 
                 if (isHeading) {
-                    lineTrimmed = '## ' + lineTrimmed;
-                } else if (isBulletHeading) {
-                    lineTrimmed = '## ' + lineTrimmed.substring(2).trim(); // ลบ Bullet ออก
+                    ln = '## ' + ln;
+                } else if (isBulletH) {
+                    ln = '## ' + ln.substring(2).trim(); // ลบ "• " เติม "## "
                 }
 
-                bodyLines.push(lineTrimmed);
+                bodyLines.push(ln);
             }
+            flush();
 
-            // ถ้าจบบทความแล้วยังบล็อกภาพค้างอยู่ ให้พ่นออกมา
-            flushImageCluster();
-
-            // จัดการเนื้อหา เพิ่มบรรทัดว่างคั่นย่อหน้า
-            let formattedBody = '';
-            for(let i=0; i < bodyLines.length; i++) {
-                const line = bodyLines[i];
-                if(line !== '') {
-                    formattedBody += line + '\n\n';
-                }
+            // รวม body
+            let body = '';
+            for (const line of bodyLines) {
+                if (line !== '') body += line + '\n\n';
             }
-            formattedBody = formattedBody.trim();
+            body = body.trim();
 
+            // สร้างผลลัพธ์
             let result = '';
-
             if (currentMode === 'full') {
-                // โหมดจัดเต็มลงเว็บ
-                const upperHeadline = headline.toUpperCase();
-                const hasExistingPrefix = 
-                    upperHeadline.startsWith('UPDATE:') || 
-                    upperHeadline.startsWith('SHORT NEWS:') || 
-                    upperHeadline.startsWith('PHOTO ALBUM:') ||
-                    upperHeadline.startsWith('BREAKING:') ||
-                    upperHeadline.startsWith('NEWS:');
-
-                if (!hasExistingPrefix && elPrefix.value !== 'NONE') {
-                    headline = `${elPrefix.value}: ${headline}`;
-                }
-
-                result += `${elCategory.value}\n\n`;
-                result += `${headline}\n\n`;
-                result += `เรื่อง: ${author}\n`;
-                if (photographer) result += `ภาพ: ${photographer}\n`;
-                
-                if (topLinks.length > 0) {
-                    result += `\n${topLinks.join('\n')}\n`;
-                }
-                
-                result += `\nBody Text:\n\n`; 
-                result += formattedBody;
+                const upper = headline.toUpperCase();
+                const hasPrefix = ['UPDATE:', 'SHORT NEWS:', 'PHOTO ALBUM:', 'BREAKING:', 'NEWS:'].some(p => upper.startsWith(p));
+                if (!hasPrefix && elPrefix.value !== 'NONE') headline = elPrefix.value + ': ' + headline;
+                result += elCategory.value + '\n\n';
+                result += headline + '\n\n';
+                result += 'เรื่อง: ' + author + '\n';
+                if (photographer) result += 'ภาพ: ' + photographer + '\n';
+                if (topLinks.length > 0) result += '\n' + topLinks.join('\n') + '\n';
+                result += '\nBody Text:\n\n' + body;
             } else {
-                // โหมดจัดเฉพาะเนื้อหา (Content Only)
-                if (headline) result += `${headline}\n\n`;
-                if (topLinks.length > 0) result += `${topLinks.join('\n')}\n\n`;
-                result += formattedBody;
+                // โหมดจัดเฉพาะเนื้อหา — ไม่แยกพาดหัว ทุกบรรทัดคือ body
+                result += body;
             }
 
-            // นำไปแสดงผล
             elFormatted.value = result;
+            debugLog.textContent = logs.length > 0 ? logs.join('\n') : '(ไม่พบบล็อกรูปภาพ)';
+            btnCopy.className = 'btn-copy ready';
 
-            // Enable copy button
-            btnCopy.disabled = false;
-            btnCopy.className = 'absolute bottom-6 right-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all shadow-md bg-blue-600 text-white hover:bg-blue-700';
-
-            // Calculate length
             const chars = result.length;
-            const words = result.trim().split(/\s+/).filter(word => word.length > 0).length;
-            charCountText.innerText = `${chars.toLocaleString()} อักษร / ${words.toLocaleString()} คำ`;
+            const words = result.trim().split(/\s+/).filter(w => w.length > 0).length;
+            charCountText.textContent = chars.toLocaleString() + ' อักษร / ' + words.toLocaleString() + ' คำ';
         };
 
-        // Copy Function
-        const handleCopy = () => {
+        // Copy
+        btnCopy.addEventListener('click', () => {
             if (!elFormatted.value) return;
 
-            const setCopiedState = () => {
-                iconCopy.classList.add('hidden');
-                iconCheck.classList.remove('hidden');
-                textCopyStatus.innerText = 'คัดลอกแล้ว!';
-                btnCopy.classList.replace('bg-blue-600', 'bg-green-500');
-                btnCopy.classList.replace('hover:bg-blue-700', 'hover:bg-green-600');
-
+            const done = () => {
+                btnCopy.className = 'btn-copy copied';
+                btnCopy.textContent = '✅ คัดลอกแล้ว!';
                 setTimeout(() => {
-                    iconCheck.classList.add('hidden');
-                    iconCopy.classList.remove('hidden');
-                    textCopyStatus.innerText = 'คัดลอก (Copy)';
-                    btnCopy.classList.replace('bg-green-500', 'bg-blue-600');
-                    btnCopy.classList.replace('hover:bg-green-600', 'hover:bg-blue-700');
+                    btnCopy.className = 'btn-copy ready';
+                    btnCopy.textContent = '📋 คัดลอก (Copy)';
                 }, 2000);
             };
 
-            const fallbackCopy = (text) => {
-                const textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.top = "0";
-                textArea.style.left = "0";
-                textArea.style.position = "fixed";
-                textArea.style.opacity = "0";
-                
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-
-                try {
-                    document.execCommand('copy');
-                    setCopiedState();
-                } catch (err) {
-                    console.error('Fallback: Oops, unable to copy', err);
-                }
-                
-                document.body.removeChild(textArea);
-            };
-
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(elFormatted.value)
-                    .then(setCopiedState)
-                    .catch(() => fallbackCopy(elFormatted.value));
+                navigator.clipboard.writeText(elFormatted.value).then(done).catch(() => {
+                    fallbackCopy(elFormatted.value); done();
+                });
             } else {
-                fallbackCopy(elFormatted.value);
+                fallbackCopy(elFormatted.value); done();
             }
+        });
+
+        const fallbackCopy = (text) => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            Object.assign(ta.style, { position: 'fixed', top: 0, left: 0, opacity: 0 });
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try { document.execCommand('copy'); } catch(e) {}
+            document.body.removeChild(ta);
         };
 
-        // Event Listeners
+        // Event listeners
         elCategory.addEventListener('change', saveSettings);
         elAuthor.addEventListener('input', saveSettings);
         elPrefix.addEventListener('change', saveSettings);
-        
-        elRaw.addEventListener('input', () => {
-            formatNews();
-        });
-        
-        btnClearAll.addEventListener('click', () => {
-            if (confirm("ต้องการล้างข้อความบนหน้าจอทั้งหมดใช่หรือไม่?")) {
-                elRaw.value = '';
-                formatNews();
-            }
-        });
-
-        btnCopy.addEventListener('click', handleCopy);
+        [detectHint, detectPicMarker, detectUrl, detectFilename, detectDedupUrl].forEach(el => el.addEventListener('change', saveSettings));
+        elRaw.addEventListener('input', formatNews);
+        btnClearAll.addEventListener('click', () => { if (confirm('ต้องการล้างข้อความทั้งหมด?')) { elRaw.value = ''; formatNews(); } });
         tabFull.addEventListener('click', () => switchTab('full'));
         tabContent.addEventListener('click', () => switchTab('content'));
 
-        // Initialize
+        // Init
         loadSettings();
         formatNews();
-
     </script>
 </body>
 </html>

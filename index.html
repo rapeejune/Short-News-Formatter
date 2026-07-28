@@ -179,19 +179,12 @@
             let bodyLines = [];
             let headlineFound = false;
             let inBody = false;
-            
-            let urlCounter = 0; // ตัวนับสำหรับลิงก์ที่วางติดกัน
 
             for (let i = 0; i < lines.length; i++) {
                 let lineTrimmed = lines[i].trim();
                 
                 // ลบจุดที่ใช้คั่นบรรทัด
                 if (lineTrimmed === '.') {
-                    continue;
-                }
-
-                // ลบไฟล์ขยะประเภทรูปภาพ (ถ้าไม่ใช่ลิงก์)
-                if (/\.(jpg|jpeg|png|webp|gif)$/i.test(lineTrimmed) && !lineTrimmed.startsWith('http')) {
                     continue;
                 }
 
@@ -217,7 +210,8 @@
                     continue;
                 } 
                 
-                let isUrl = lineTrimmed.startsWith('http://') || lineTrimmed.startsWith('https://');
+                let plainText = lineTrimmed.replace(/\*/g, '').trim();
+                let isUrl = plainText.startsWith('http://') || plainText.startsWith('https://');
 
                 // เช็กลิงก์หน้าปก (Top link)
                 if (!inBody && isUrl) {
@@ -230,47 +224,85 @@
                 
                 inBody = true; // ล็อกว่าเข้า Body แล้ว
 
-                // ข้ามบรรทัดว่าง
                 if (lineTrimmed === '') {
                     bodyLines.push('');
                     continue;
                 }
 
-                let plainText = lineTrimmed.replace(/\*/g, '').trim();
-
-                // 1. ข้ามคำสั่งแทรกภาพ (ลบทิ้ง ไม่นำมาแสดงผล)
-                if (plainText === 'แทรกภาพ' || plainText === 'แทรกรูป') {
+                // ข้ามคำสั่งขยะที่ใช้บอกตำแหน่งหรือการจัดวาง
+                let lineNoStars = plainText;
+                let isPlaceholderText = (lineNoStars === 'แทรกภาพ' || lineNoStars === 'แทรกรูป' || lineNoStars.includes('(วางรูป') || lineNoStars.includes('(แทรกรูป') || lineNoStars.includes('(วางภาพ'));
+                if (isPlaceholderText) {
                     continue;
                 }
 
-                // 2. จัดการ Marker [📷 รูปที่ X] -> ให้เป็น .img1 เสมอทุกอันแยกกัน
-                if (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่')) {
-                    bodyLines.push('.img1');
-                    urlCounter = 0; // ตัดการนับลิงก์ต่อเนื่อง
-                    continue;
+                // --- ตรวจจับและแปลงจุดใส่รูป (Image Block) ---
+                let isPicMarker = (lineTrimmed.startsWith('[') && lineTrimmed.includes('รูปที่'));
+                
+                // ตรวจจับชื่อไฟล์รูปที่ไม่มีนามสกุลแต่รู้ว่าเป็นชื่อรูปภาพ (เช่น palanuson-XX, Sea Personal Pic 01)
+                // หรือชื่อไฟล์ที่มีนามสกุล (.jpg, .png ฯลฯ) ที่ไม่ใช่ URL
+                let hasImageExt = /\.(jpg|jpeg|png|webp|gif)$/i.test(lineTrimmed);
+                let isImageNamePattern = /^[a-zA-Z0-9\s_-]+(-\d+|\s\d+)$/i.test(lineTrimmed); // รองรับ pattern "word-12" หรือ "word 01"
+                let isPalanuson = lineTrimmed.toLowerCase().includes('palanuson');
+                
+                // เช็กเงื่อนไขว่าเป็นการระบุรูปภาพหรือไม่
+                let isImageRef = false;
+                
+                // 1. เป็น [📷 รูปที่ X]
+                if (isPicMarker) {
+                     isImageRef = true;
+                } 
+                // 2. เป็นลิงก์ URL
+                else if (isUrl) {
+                     isImageRef = true;
+                } 
+                // 3. เป็นชื่อไฟล์ขยะ หรือ pattern ของชื่อรูป 
+                // และต้องแน่ใจว่าไม่ใช่ประโยคเนื้อหายาวๆ
+                else if (!hasImageExt && (isImageNamePattern || isPalanuson) && lineTrimmed.split(' ').length <= 5) {
+                     isImageRef = true;
+                }
+                else if (hasImageExt && !isUrl) {
+                     isImageRef = true;
                 }
 
-                // 3. จัดการลิงก์ใน Body -> ถ้ายาวติดกัน ให้นับ .img1, .img2
-                if (isUrl) {
-                    urlCounter++;
-                    bodyLines.push(`.img${urlCounter}`);
-                    continue;
+                // ถ้าเจอการวางหลายรูปในบรรทัดเดียวคั่นด้วย / (เช่น Sea Personal Pic 01 / Sea Personal Pic 02)
+                let multiPicMatch = lineTrimmed.split('/');
+                if (!isImageRef && multiPicMatch.length > 1) {
+                    let allPartsArePics = true;
+                    for (let part of multiPicMatch) {
+                        let trimmedPart = part.trim();
+                        let isPartImagePattern = /^[a-zA-Z0-9\s_-]+(-\d+|\s\d+)$/i.test(trimmedPart) || trimmedPart.toLowerCase().includes('palanuson');
+                        let isPartHasExt = /\.(jpg|jpeg|png|webp|gif)$/i.test(trimmedPart);
+                        
+                        if (!(isPartImagePattern || isPartHasExt) || trimmedPart.split(' ').length > 5) {
+                            allPartsArePics = false;
+                            break;
+                        }
+                    }
+                    if (allPartsArePics) {
+                        isImageRef = true;
+                        // ถ้าเจอ 2 ชื่อ พ่น .img1 สองครั้ง
+                        for (let p=0; p < multiPicMatch.length; p++){
+                             bodyLines.push('.img1');
+                        }
+                        continue;
+                    }
                 }
 
-                // 4. ถ้าเป็นข้อความปกติ ให้รีเซ็ตตัวนับลิงก์
-                urlCounter = 0;
-
-                // 5. จัดการ Heading
-                let tempText = lineTrimmed;
-                if (tempText.startsWith('• ')) {
-                    tempText = tempText.substring(2).trim();
-                } else if (tempText.startsWith('•')) {
-                    tempText = tempText.substring(1).trim();
+                // ถ้าวิเคราะห์แล้วว่าเป็นจุดแทรกรูป (ไม่ว่าจะรูปแบบไหน) พ่น .img1 ออกมาเดี่ยวๆ 1 ตัวเลย
+                if (isImageRef) {
+                     bodyLines.push('.img1');
+                     continue;
                 }
 
-                // ต้องคลุมด้วย ** หน้าและหลัง เท่านั้นถึงจะเป็น Heading
-                if (tempText.startsWith('**') && tempText.endsWith('**') && !tempText.startsWith('**ภาพ')) {
-                    lineTrimmed = '## ' + tempText;
+                // จัดการ Heading (เริ่มและจบด้วย ** และไม่ใช่เครดิตภาพท้ายข่าว)
+                if (lineTrimmed.startsWith('**') && lineTrimmed.endsWith('**') && !lineTrimmed.startsWith('**ภาพ:**')) {
+                    lineTrimmed = '## ' + lineTrimmed;
+                }
+                
+                // จัดการ Bullet List ที่เป็นตัวหนา
+                if (lineTrimmed.startsWith('• **') && lineTrimmed.endsWith('**')) {
+                    lineTrimmed = '## ' + lineTrimmed.substring(2).trim();
                 }
 
                 bodyLines.push(lineTrimmed);

@@ -433,22 +433,60 @@ function run(){
     if(mode==='full'){
       if(!hFound&&ln!==''){headline=ln;hFound=true;continue}if(!hFound)continue;
       if(!inBody&&(ln.startsWith('เรื่อง:')||ln.startsWith('เรื่อง :'))){author=ln.replace(/^เรื่อง\s*:/,'').trim();continue}
-      if(!inBody&&(ln.startsWith('ภาพ:')||ln.startsWith('ภาพ :'))){photographer=ln.replace(/^ภาพ\s*:/,'').trim();continue}
+      if(!inBody&&(ln.startsWith('ภาพ:')||ln.startsWith('ภาพ :'))){
+        const photoVal=ln.replace(/^ภาพ\s*:/,'').trim();
+        if(photoVal.startsWith('http://')||photoVal.startsWith('https://')){
+          topLinks.push(photoVal);
+        }else if(photoVal){
+          photographer=photoVal;
+        }
+        // ถ้า ภาพ: alone (ไม่มีค่า) → ข้ามไป URL ถัดไปจะถูกจับเป็น topLink ปกติ
+        continue;
+      }
       let pf=ln.replace(/\*/g,'').trim();if(!inBody&&(pf.startsWith('http://')||pf.startsWith('https://'))){topLinks.push(pf);continue}
     }
     let plain=ln.replace(/\*/g,'').trim(),isUrlC=plain.startsWith('http://')||plain.startsWith('https://');
     if(ln===''&&bodyLines.length===0)continue;inBody=true;
     if(ln===''){if(clOn)continue;if(!lastE){bodyLines.push('');lastE=true}continue}lastE=false;
 
+    // ข้ามเส้นคั่น (————, ______, ======, -------)
+    if(/^[-_=—–─]{4,}$/.test(plain)){logs.push(`  ✂️ Separator(L${i}): skipped`);continue}
+
     // Art brief trigger detection
     if(isArtBrief(plain)){
-      flush(); // flush ภาพที่ค้างก่อน
+      flush();
       abSkipping=true;abRemain=abLines;
       logs.push(`  🎨 ArtBrief trigger(L${i}): "${ln}" → skip next ${abLines} lines`);
       continue;
     }
 
-    if(mode==='full'){let cm=ln.match(/^\*{0,2}ภาพ\s*:\s*\*{0,2}\s*(.+?)(\*{0,2})$/);if(cm){photographer=cm[1].replace(/\*+/g,'').trim();continue}}
+    // ภาพ: detection (ทั้ง full และ content mode)
+    // Case 1: "ภาพ: URL" → image
+    // Case 2: "ภาพ: ชื่อคน" → credit (full mode only)  
+    // Case 3: "ภาพ:" alone → image cluster trigger (URL จะตามมาบรรทัดถัดไป)
+    const photoMatch=plain.match(/^ภาพ\s*:\s*(.*)$/);
+    if(photoMatch){
+      const pv=photoMatch[1].trim();
+      if(pv.startsWith('http://')||pv.startsWith('https://')){
+        // ภาพ: + URL → image
+        if(!clOn)clSt=i;clOn=true;
+        if(dD.checked)clUrls.add(pv);else clUrls.add(pv+'#'+clUrls.size);
+        logs.push(`  📸 ภาพ:+URL(L${i}): → image`);
+        continue;
+      }else if(!pv){
+        // ภาพ: alone → start image cluster (URL will follow)
+        if(!clOn)clSt=i;clOn=true;clHint++;
+        logs.push(`  📸 ภาพ: alone(L${i}): → cluster hint`);
+        continue;
+      }else if(mode==='full'){
+        // ภาพ: + ชื่อคน → credit
+        photographer=pv;
+        logs.push(`  📷 Credit(L${i}): "${pv}"`);
+        continue;
+      }
+      // content mode + ภาพ: + text → ปล่อยผ่านเป็น body text
+    }
+
     let iH=isHint(plain),iP=isPic(ln),iR=isUrlC&&isRef(plain),iU=!iR&&isImgU(isUrlC),iF=isFn(plain);
     if(iH||iP||iU||iF){if(!clOn)clSt=i;clOn=true;if(iH)clHint++;if(iP)clPic++;if(iU){if(dD.checked)clUrls.add(plain);else clUrls.add(plain+'#'+clUrls.size)}if(iF)clFile+=plain.split('/').map(p=>p.trim()).filter(Boolean).length;continue}
     if(iR){flush();bodyLines.push(ln);continue}flush();

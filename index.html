@@ -237,8 +237,8 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
       </div>
       <div style="margin-top:6px;padding-left:28px;display:flex;flex-direction:column;gap:4px">
         <label style="font-size:11px;color:#6e6e73">คำ trigger (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
-        <input type="text" id="d-arttriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ">
-        <p class="ht">⚠️ ไม่ใส่ "แคปชั่น / บรรยาย / caption" เพราะเป็นข้อความใต้ภาพที่ต้องเก็บไว้</p>
+        <input type="text" id="d-arttriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ,ตัดคำว่า">
+        <p class="ht">⚠️ ห้ามใส่คำที่ใช้แทรกรูป เช่น "แทรกภาพ / แทรกรูป" และ "แคปชั่น / บรรยาย / caption" (เป็นข้อความใต้ภาพ ต้องเก็บ)</p>
       </div>
     </div>
   </div>
@@ -445,51 +445,55 @@ function run(){
       }
       let pf=ln.replace(/\*/g,'').trim();if(!inBody&&(pf.startsWith('http://')||pf.startsWith('https://'))){topLinks.push(pf);continue}
     }
-    let plain=ln.replace(/\*/g,'').trim(),isUrlC=plain.startsWith('http://')||plain.startsWith('https://');
+    let plain=ln.replace(/\*/g,'').trim();
+    // Strip leading bullets (•, -, –) for URL detection
+    let plainUrl=plain.replace(/^[•·\-–—]\s*/,'').trim();
+    let isUrlC=plainUrl.startsWith('http://')||plainUrl.startsWith('https://');
+    if(isUrlC)plain=plainUrl; // ใช้ URL ที่สะอาดแล้ว
+
     if(ln===''&&bodyLines.length===0)continue;inBody=true;
     if(ln===''){if(clOn)continue;if(!lastE){bodyLines.push('');lastE=true}continue}lastE=false;
 
     // ข้ามเส้นคั่น (————, ______, ======, -------)
     if(/^[-_=—–─]{4,}$/.test(plain)){logs.push(`  ✂️ Separator(L${i}): skipped`);continue}
 
-    // Art brief trigger detection
-    if(isArtBrief(plain)){
-      flush();
-      abSkipping=true;abRemain=abLines;
-      logs.push(`  🎨 ArtBrief trigger(L${i}): "${ln}" → skip next ${abLines} lines`);
-      continue;
-    }
-
     // ภาพ: detection (ทั้ง full และ content mode)
-    // Case 1: "ภาพ: URL" → image
-    // Case 2: "ภาพ: ชื่อคน" → credit (full mode only)  
-    // Case 3: "ภาพ:" alone → image cluster trigger (URL จะตามมาบรรทัดถัดไป)
     const photoMatch=plain.match(/^ภาพ\s*:\s*(.*)$/);
     if(photoMatch){
       const pv=photoMatch[1].trim();
       if(pv.startsWith('http://')||pv.startsWith('https://')){
-        // ภาพ: + URL → image
         if(!clOn)clSt=i;clOn=true;
         if(dD.checked)clUrls.add(pv);else clUrls.add(pv+'#'+clUrls.size);
-        logs.push(`  📸 ภาพ:+URL(L${i}): → image`);
-        continue;
+        logs.push(`  📸 ภาพ:+URL(L${i}): → image`);continue;
       }else if(!pv){
-        // ภาพ: alone → start image cluster (URL will follow)
         if(!clOn)clSt=i;clOn=true;clHint++;
-        logs.push(`  📸 ภาพ: alone(L${i}): → cluster hint`);
-        continue;
+        logs.push(`  📸 ภาพ: alone(L${i}): → cluster hint`);continue;
       }else if(mode==='full'){
-        // ภาพ: + ชื่อคน → credit
-        photographer=pv;
-        logs.push(`  📷 Credit(L${i}): "${pv}"`);
-        continue;
+        photographer=pv;logs.push(`  📷 Credit(L${i}): "${pv}"`);continue;
       }
-      // content mode + ภาพ: + text → ปล่อยผ่านเป็น body text
     }
 
+    // === Image Detection ก่อน Art Brief เสมอ ===
     let iH=isHint(plain),iP=isPic(ln),iR=isUrlC&&isRef(plain),iU=!iR&&isImgU(isUrlC),iF=isFn(plain);
-    if(iH||iP||iU||iF){if(!clOn)clSt=i;clOn=true;if(iH)clHint++;if(iP)clPic++;if(iU){if(dD.checked)clUrls.add(plain);else clUrls.add(plain+'#'+clUrls.size)}if(iF)clFile+=plain.split('/').map(p=>p.trim()).filter(Boolean).length;continue}
-    if(iR){flush();bodyLines.push(ln);continue}flush();
+    if(iH||iP||iU||iF){
+      if(!clOn)clSt=i;clOn=true;
+      if(iH)clHint++;if(iP)clPic++;
+      if(iU){if(dD.checked)clUrls.add(plain);else clUrls.add(plain+'#'+clUrls.size)}
+      if(iF)clFile+=plain.split('/').map(p=>p.trim()).filter(Boolean).length;
+      logs.push(`  📸 Image(L${i}): "${ln.substring(0,50)}" h=${iH} p=${iP} u=${iU} f=${iF}`);
+      continue;
+    }
+    if(iR){flush();bodyLines.push(ln);continue}
+
+    // === Art Brief — เช็คหลัง Image Detection ===
+    if(isArtBrief(plain)){
+      flush();
+      abSkipping=true;abRemain=abLines;
+      logs.push(`  🎨 ArtBrief(L${i}): "${ln}" → skip next ${abLines} lines`);
+      continue;
+    }
+
+    flush();
     let isHd=ln.startsWith('**')&&ln.endsWith('**')&&!ln.startsWith('**ภาพ:**')&&!ln.startsWith('**ภาพ :**');
     let isBH=ln.startsWith('• **')&&ln.endsWith('**')&&!ln.startsWith('• **ภาพ:**');
     if(isHd)ln='## '+ln;else if(isBH)ln='## '+ln.substring(2).trim();

@@ -227,18 +227,26 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
       <label class="cki"><input type="checkbox" id="d-artbrief" checked>
         <div>
           <div class="n">ข้าม Art Brief (เท็กลงภาพ / Text in pic)</div>
-          <div class="d" style="font-size:10px;color:#aeaeb2">ข้ามบรรทัดบรีฟ + ข้อความถัดไปอีก N บรรทัด</div>
+          <div class="d" style="font-size:10px;color:#aeaeb2">ข้ามบรรทัดบรีฟที่เป็นตัวพิมพ์ใหญ่ล้วน จนกว่าจะเจอประโยคปกติ (มีตัวเล็กปน)</div>
         </div>
       </label>
       <div style="display:flex;align-items:center;gap:8px;margin-top:4px;padding-left:28px">
-        <label style="font-size:11px;color:#6e6e73;white-space:nowrap">ข้ามถัดไป:</label>
-        <input type="number" id="d-artlines" value="2" min="0" max="10" style="width:50px;font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:3px 6px;outline:none;font-family:inherit">
-        <span style="font-size:10px;color:#aeaeb2">บรรทัด หลัง trigger (ไม่นับว่าง)</span>
+        <label style="font-size:11px;color:#6e6e73;white-space:nowrap">Safety cap:</label>
+        <input type="number" id="d-artlines" value="15" min="1" max="50" style="width:50px;font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:3px 6px;outline:none;font-family:inherit">
+        <span style="font-size:10px;color:#aeaeb2">บรรทัด — กันหลุดถ้าไม่มีบรรทัดว่างเลย</span>
       </div>
       <div style="margin-top:6px;padding-left:28px;display:flex;flex-direction:column;gap:4px">
         <label style="font-size:11px;color:#6e6e73">คำ trigger (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
         <input type="text" id="d-arttriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ,ตัดคำว่า">
         <p class="ht">⚠️ ห้ามใส่คำที่ใช้แทรกรูป เช่น "แทรกภาพ / แทรกรูป" และ "แคปชั่น / บรรยาย / caption" (เป็นข้อความใต้ภาพ ต้องเก็บ)</p>
+      </div>
+    </div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
+      <p class="ht" style="margin-bottom:6px">📌 หัวข้อย่อย — ไม่ใส่ ## (เช่น วันที่, Label ข้อมูล)</p>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:11px;color:#6e6e73">คำที่ขึ้นต้นแล้วถือเป็นหัวข้อย่อย (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
+        <input type="text" id="d-shlabels" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="Time,When,Where,Admission,Booking,More Info,Note,Price,Location,Address,Contact,Hours,Date,Duration,Fee,Cost,RSVP,Tel,Phone,Email,Website,Schedule,Program,Map,ตารางรอบฉาย,วันจันทร์,วันอังคาร,วันพุธ,วันพฤหัสบดี,วันศุกร์,วันเสาร์,วันอาทิตย์,ภาพ">
+        <p class="ht">บรรทัด <strong>**ข้อความ**</strong> ที่ขึ้นต้นด้วยคำเหล่านี้จะไม่ใส่ ## นำหน้า (ยังคงตัวหนา ** ไว้เหมือนเดิม) — เหมาะกับ Label ข้อมูล วันที่ ตาราง ที่ไม่ใช่หัวข้อหลัก</p>
       </div>
     </div>
   </div>
@@ -326,8 +334,8 @@ const CI_C={NEWS:'#e62227',POP:'#0000ff',WEALTH:'#c19380',LIFE:'#000000',SPORT:'
 
 // Storage
 const mem={};const sG=k=>{try{return localStorage.getItem(k)}catch{return mem[k]||null}};const sS=(k,v)=>{try{localStorage.setItem(k,v)}catch{mem[k]=v}};
-function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"0e1b0e230e300e400e140e470e190e2a0e330e040e310e0d";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||2;if(o.at)dAT.value=o.at}
-function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||2,at:dAT.value}));run()}
+function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||15;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh}
+function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||15,at:dAT.value,sh:dSH.value}));run()}
 
 // Tabs
 $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-content').className='mtab';$('sbar').className='sbar';run()};
@@ -347,7 +355,7 @@ document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
 }});
 
 // Image helpers
-const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers');
+const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels');
 const isHint=s=>dH.checked&&(s==='แทรกภาพ'||s==='แทรกรูป'||s.includes('(วางรูป')||s.includes('(แทรกรูป')||s.includes('(วางภาพ'));
 const isPic=s=>dP.checked&&s.startsWith('[')&&s.includes('รูปที่');
 const isImgU=b=>dU.checked&&b;
@@ -407,7 +415,7 @@ function run(){
   // Art brief skip state
   let abSkipping=false,abRemain=0;
   const abEnabled=dAB.checked;
-  const abLines=parseInt(dAL.value)||2;
+  const abCap=parseInt(dAL.value)||15; // safety cap เท่านั้น — หยุดจริงเมื่อเจอบรรทัดว่าง
   // Build trigger list from input field
   const abTriggers=($('d-arttriggers').value||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const isArtBrief=(s)=>{
@@ -416,19 +424,47 @@ function run(){
     return abTriggers.some(t=>low.startsWith(t));
   };
 
+  // Sub-heading label — บรรทัด **label...** ที่ไม่ควรใส่ ## (วันที่, Time:, Where: ฯลฯ)
+  const shTriggers=(dSH.value||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const isSubLabel=(inner)=>{
+    if(!shTriggers.length)return false;
+    const low=inner.trim().toLowerCase();
+    return shTriggers.some(t=>t&&low.startsWith(t));
+  };
+
+  // เช็คว่าเป็น "บรรทัดบรีฟ" หรือไม่ — ตัวพิมพ์ใหญ่ล้วน (ไม่มีตัวเล็กปนเลย)
+  // เช่น "HOUSE OF FILMS: SOMEWHERE TO BELONG", "21-23 AUG / THE CORNER HOUSE BANGKOK"
+  // ถ้าเจอตัวพิมพ์เล็กแม้แค่ตัวเดียว (ประโยคปกติ) ถือว่าจบกลุ่มบรีฟทันที
+  const isBriefLine=(s)=>{
+    const hasUpper=/[A-Z]/.test(s);
+    const hasLower=/[a-z]/.test(s);
+    return hasUpper&&!hasLower;
+  };
+
   const flush=()=>{if(!clOn)return;const uc=clUrls.size,n=Math.max(clHint,clPic,uc,clFile),f=n>0?n:1;totalImgs+=f;logs.push(`📸 Cluster(L${clSt}): hint=${clHint} pic=${clPic} url=${uc} file=${clFile} → ${f} img`);for(let k=0;k<f;k++)bodyLines.push('.img1');clOn=false;clPic=0;clUrls=new Set();clFile=0;clHint=0;clSt=-1};
 
   for(let i=0;i<normalizedLines.length;i++){
     let ln=normalizedLines[i].trim();if(ln==='.')continue;ln=ln.replace(/\s{2,}/g,' ');
 
-    // Art brief: ข้ามบรรทัดที่เหลือ
+    // Art brief: ข้ามบรรทัดว่าง + บรรทัดตัวพิมพ์ใหญ่ล้วน จนกว่าจะเจอประโยคปกติ (มีตัวเล็กปน)
     if(abSkipping){
-      if(ln==='')continue; // บรรทัดว่างไม่นับ
-      abRemain--;
-      logs.push(`  🎨 ArtBrief skip(L${i}): "${ln.substring(0,40)}" [${abRemain} left]`);
-      if(abRemain<=0)abSkipping=false;
-      continue;
+      if(ln===''){continue} // กลืนบรรทัดว่างระหว่างบรีฟ ไม่หยุด
+      const plainCheck=ln.replace(/\*/g,'').trim();
+      if(isBriefLine(plainCheck)){
+        abRemain--;
+        logs.push(`  🎨 ArtBrief skip(L${i}): "${ln.substring(0,40)}" [cap ${abRemain} เหลือ]`);
+        if(abRemain<=0){
+          abSkipping=false;
+          logs.push(`  ⚠️ ArtBrief safety cap reached(L${i})`);
+        }
+        continue;
+      }else{
+        abSkipping=false;
+        logs.push(`  🎨 ArtBrief end(L${i}): พบประโยคปกติ — กลับสู่เนื้อหา`);
+        // ไม่ continue — ให้บรรทัดนี้ถูกประมวลผลตามปกติต่อไป
+      }
     }
+
 
     if(mode==='full'){
       if(!hFound&&ln!==''){headline=ln;hFound=true;continue}if(!hFound)continue;
@@ -488,15 +524,30 @@ function run(){
     // === Art Brief — เช็คหลัง Image Detection ===
     if(isArtBrief(plain)){
       flush();
-      abSkipping=true;abRemain=abLines;
-      logs.push(`  🎨 ArtBrief(L${i}): "${ln}" → skip next ${abLines} lines`);
+      abSkipping=true;abRemain=abCap;
+      logs.push(`  🎨 ArtBrief(L${i}): "${ln}" → skip จนกว่าจะเจอบรรทัดว่าง (cap ${abCap})`);
       continue;
     }
 
     flush();
     let isHd=ln.startsWith('**')&&ln.endsWith('**')&&!ln.startsWith('**ภาพ:**')&&!ln.startsWith('**ภาพ :**');
     let isBH=ln.startsWith('• **')&&ln.endsWith('**')&&!ln.startsWith('• **ภาพ:**');
-    if(isHd)ln='## '+ln;else if(isBH)ln='## '+ln.substring(2).trim();
+    if(isHd){
+      const inner=ln.slice(2,-2);
+      if(isSubLabel(inner)){
+        logs.push(`  📌 SubLabel(L${i}): "${inner.substring(0,40)}" → ไม่ใส่ ##`);
+      }else{
+        ln='## '+ln;
+      }
+    }else if(isBH){
+      const strippedBullet=ln.substring(2).trim();
+      const inner=strippedBullet.slice(2,-2);
+      if(isSubLabel(inner)){
+        logs.push(`  📌 SubLabel bullet(L${i}): "${inner.substring(0,40)}" → ไม่ใส่ ##`);
+      }else{
+        ln='## '+strippedBullet;
+      }
+    }
     bodyLines.push(ln);
   }
   flush();
@@ -678,6 +729,7 @@ $('txt-raw').addEventListener('input',()=>{removedH2.clear();run()});
 [$('d-hint'),$('d-pic'),$('d-url'),$('d-file'),$('d-dedup'),$('d-artbrief'),$('d-artlines')].forEach(el=>el.addEventListener('change',saveS));
 $('d-artlines').addEventListener('input',saveS);
 $('d-arttriggers').addEventListener('input',saveS);
+$('d-shlabels').addEventListener('input',saveS);
 $('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();run()}};
 
 // Dark mode

@@ -224,8 +224,9 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
       <label class="cki" style="padding-left:0"><input type="checkbox" id="d-pic" checked><div class="n">มาร์กเกอร์รูปภาพ (กลุ่มที่ 2 — เช่น [รูปที่ N])</div></label>
-      <input type="text" id="d-pictriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f;margin-left:20px" value="รูปที่,pic,ภาพที่">
+      <input type="text" id="d-pictriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f;margin-left:20px" value="รูปที่,ภาพที่">
       <p class="ht" style="margin-left:20px">ใช้แยกจากกลุ่มที่ 1 เพราะนับจำนวนแยกกัน — ถ้ามีมาร์กเกอร์เลข 3 อัน = 3 ภาพ</p>
+      <p class="ht" style="margin-left:20px">⚠️ ระวังคำสั้นๆ ภาษาอังกฤษ เช่น "pic" เพราะจะไปจับคำอื่นที่มี pic ปนด้วยโดยไม่ตั้งใจ (เช่น topic, picture, typical) แนะนำให้ใช้คำที่เจาะจงกว่า เช่น "แทรก pic" แทน</p>
     </div>
 
     <div class="ckg">

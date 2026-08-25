@@ -214,14 +214,35 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 <details class="pnl">
   <summary>🖼️ ตั้งค่าตรวจจับภาพ + Art Brief</summary>
   <div class="pb">
-    <p class="ht">เลือกรูปแบบที่นักเขียนใช้บอกตำแหน่งภาพ</p>
+    <p class="ht">พิมพ์คำ/สัญลักษณ์ที่นักเขียนใช้บอกตำแหน่งภาพเอง — เพิ่มคำใหม่ได้ตลอดถ้าเจอรูปแบบที่ระบบยังไม่รู้จัก</p>
+
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
+      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-hint" checked><div class="n">คำบอกตำแหน่งภาพ (กลุ่มที่ 1)</div></label>
+      <input type="text" id="d-hinttriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f;margin-left:20px" value="แทรกภาพ,แทรกรูป,แทรก pic,(วางรูป,(แทรกรูป,(วางภาพ">
+      <p class="ht" style="margin-left:20px">จับแบบ "มีคำนี้อยู่ในบรรทัด" (ไม่ต้องขึ้นต้นพอดี) — เช่น "แทรก pic ตรงนี้" ก็จับได้</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
+      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-pic" checked><div class="n">มาร์กเกอร์รูปภาพ (กลุ่มที่ 2 — เช่น [รูปที่ N])</div></label>
+      <input type="text" id="d-pictriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f;margin-left:20px" value="รูปที่,pic,ภาพที่">
+      <p class="ht" style="margin-left:20px">ใช้แยกจากกลุ่มที่ 1 เพราะนับจำนวนแยกกัน — ถ้ามีมาร์กเกอร์เลข 3 อัน = 3 ภาพ</p>
+    </div>
+
     <div class="ckg">
-      <label class="cki"><input type="checkbox" id="d-hint" checked><div class="n">คำบอก "แทรกภาพ"</div></label>
-      <label class="cki"><input type="checkbox" id="d-pic" checked><div class="n">[📷 รูปที่ N]</div></label>
       <label class="cki"><input type="checkbox" id="d-url" checked><div class="n">ลิงก์ URL</div></label>
       <label class="cki"><input type="checkbox" id="d-file" checked><div class="n">ชื่อไฟล์ภาพ</div></label>
     </div>
     <label class="cki" style="margin-top:4px;border-top:1px solid rgba(0,0,0,.04);padding-top:6px"><input type="checkbox" id="d-dedup" checked><div class="n">ตัด URL ซ้ำ</div></label>
+
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
+      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-dropcapurl" checked>
+        <div>
+          <div class="n">ตัดลิงก์แหล่งที่มาซ้ำหลังคำบรรยายภาพ</div>
+          <div class="d" style="font-size:10px;color:#aeaeb2">เช่น [รูปที่ 1] → คำบรรยาย/แหล่งที่มา → ลิงก์ Drive (ลิงก์นี้จะถูกตัดทิ้ง ไม่นับเป็นภาพเพิ่ม)</div>
+        </div>
+      </label>
+    </div>
+
     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
       <p class="ht" style="margin-bottom:6px">🎨 Art Brief — ข้อความบรีฟอาร์ตที่ไม่ใช่เนื้อข่าว</p>
       <label class="cki"><input type="checkbox" id="d-artbrief" checked>
@@ -334,8 +355,8 @@ const CI_C={NEWS:'#e62227',POP:'#0000ff',WEALTH:'#c19380',LIFE:'#000000',SPORT:'
 
 // Storage
 const mem={};const sG=k=>{try{return localStorage.getItem(k)}catch{return mem[k]||null}};const sS=(k,v)=>{try{localStorage.setItem(k,v)}catch{mem[k]=v}};
-function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||15;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh}
-function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||15,at:dAT.value,sh:dSH.value}));run()}
+function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||15;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false}
+function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||15,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked}));run()}
 
 // Tabs
 $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-content').className='mtab';$('sbar').className='sbar';run()};
@@ -355,9 +376,9 @@ document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
 }});
 
 // Image helpers
-const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels');
-const isHint=s=>dH.checked&&(s==='แทรกภาพ'||s==='แทรกรูป'||s.includes('(วางรูป')||s.includes('(แทรกรูป')||s.includes('(วางภาพ'));
-const isPic=s=>dP.checked&&s.startsWith('[')&&s.includes('รูปที่');
+const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl');
+const isHint=s=>{if(!dH.checked)return false;const low=s.toLowerCase();const list=(dHT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
+const isPic=s=>{if(!dP.checked)return false;const low=s.toLowerCase();const list=(dPT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
 const isImgU=b=>dU.checked&&b;
 const isFn=s=>{if(!dF.checked)return false;const ps=s.split('/').map(p=>p.trim());let fc=0,vc=0;for(const p of ps){if(!p)continue;vc++;if(/\.(jpg|jpeg|png|webp|gif|heic|heif|tiff?)$/i.test(p)){fc++;continue}if(p.toLowerCase().includes('palanuson')){fc++;continue}if(/^(IMG|DSC|DJI|DCIM|PHOTO|PIC|COVER|THUMB|HERO|BANNER)[_-]\d/.test(p)||/^(Screenshot|Screen\s?Shot)[_\s-]\d/i.test(p)){fc++;continue}}return vc>0&&fc===vc};
 const refDom=['thestandard.co','bbc.com','reuters.com','apnews.com','nytimes.com','theguardian.com','bloomberg.com','cnn.com','bangkokpost.com','matichon.co.th','thairath.co.th','thaipbs.or.th','twitter.com','x.com','facebook.com','youtube.com','youtu.be','wikipedia.org'];
@@ -411,6 +432,7 @@ function run(){
   let headline='',author=$('inp-author').value,photographer='',topLinks=[],bodyLines=[];
   let hFound=false,inBody=false,totalImgs=0;
   let clOn=false,clPic=0,clUrls=new Set(),clFile=0,clHint=0,clSt=-1,lastE=false;
+  let awaitingSourceURL=false; // เพิ่งพ่นรูปแล้วเจอบรรทัดคำบรรยาย → บรรทัดถัดไปถ้าเป็นลิงก์ ให้ตัดทิ้ง (ไม่นับภาพเพิ่ม)
 
   // Art brief skip state
   let abSkipping=false,abRemain=0;
@@ -441,10 +463,33 @@ function run(){
     return hasUpper&&!hasLower;
   };
 
-  const flush=()=>{if(!clOn)return;const uc=clUrls.size,n=Math.max(clHint,clPic,uc,clFile),f=n>0?n:1;totalImgs+=f;logs.push(`📸 Cluster(L${clSt}): hint=${clHint} pic=${clPic} url=${uc} file=${clFile} → ${f} img`);for(let k=0;k<f;k++)bodyLines.push('.img1');clOn=false;clPic=0;clUrls=new Set();clFile=0;clHint=0;clSt=-1};
+  const flush=()=>{
+    if(!clOn)return 0;
+    const uc=clUrls.size,n=Math.max(clHint,clPic,uc,clFile),f=n>0?n:1;
+    totalImgs+=f;
+    logs.push(`📸 Cluster(L${clSt}): hint=${clHint} pic=${clPic} url=${uc} file=${clFile} → ${f} img`);
+    for(let k=0;k<f;k++)bodyLines.push('.img1');
+    clOn=false;clPic=0;clUrls=new Set();clFile=0;clHint=0;clSt=-1;
+    return f;
+  };
 
   for(let i=0;i<normalizedLines.length;i++){
     let ln=normalizedLines[i].trim();if(ln==='.')continue;ln=ln.replace(/\s{2,}/g,' ');
+
+    // ตัดลิงก์แหล่งที่มาที่ตามหลังคำบรรยายภาพทันที (เช่น "[รูปที่ 1]" → คำบรรยาย → ลิงก์ Drive ซ้ำ)
+    if(awaitingSourceURL){
+      if(ln===''){continue} // รอผ่านบรรทัดว่าง ยังไม่ตัดสินใจ
+      const capPlain=ln.replace(/\*/g,'').trim();
+      const capUrl=capPlain.replace(/^[•·\-–—]\s*/,'').trim();
+      const capIsUrl=capUrl.startsWith('http://')||capUrl.startsWith('https://');
+      awaitingSourceURL=false; // ใช้สิทธิ์นี้ได้แค่บรรทัดเดียว
+      if(capIsUrl&&dDropCapUrl.checked&&!isRef(capUrl)){
+        logs.push(`  🗑️ DropSourceURL(L${i}): "${capUrl.substring(0,50)}" — ตัดลิงก์แหล่งที่มาซ้ำหลังคำบรรยายภาพ`);
+        continue;
+      }
+      // ไม่ใช่ลิงก์ หรือปิดใช้งาน → ปล่อยให้ประมวลผลตามปกติต่อไป (ไม่ continue)
+    }
+
 
     // Art brief: ข้ามบรรทัดว่าง + บรรทัดตัวพิมพ์ใหญ่ล้วน จนกว่าจะเจอประโยคปกติ (มีตัวเล็กปน)
     if(abSkipping){
@@ -529,9 +574,13 @@ function run(){
       continue;
     }
 
-    flush();
+    const flushedN=flush();
     let isHd=ln.startsWith('**')&&ln.endsWith('**')&&!ln.startsWith('**ภาพ:**')&&!ln.startsWith('**ภาพ :**');
     let isBH=ln.startsWith('• **')&&ln.endsWith('**')&&!ln.startsWith('• **ภาพ:**');
+    if(flushedN>0&&!isHd&&!isBH&&dDropCapUrl.checked){
+      awaitingSourceURL=true;
+      logs.push(`  📎 Caption candidate(L${i}): "${ln.substring(0,40)}" — ถ้าบรรทัดถัดไปเป็นลิงก์จะตัดทิ้ง`);
+    }
     if(isHd){
       const inner=ln.slice(2,-2);
       if(isSubLabel(inner)){
@@ -726,10 +775,12 @@ function showToast(m){const t=$('toast');t.textContent=m;t.classList.add('show')
 // === EVENTS ===
 $('txt-raw').addEventListener('input',()=>{removedH2.clear();run()});
 [$('inp-cat'),$('inp-pfx'),$('inp-author'),$('inp-toc')].forEach(el=>{el.addEventListener('input',saveS);el.addEventListener('change',saveS)});
-[$('d-hint'),$('d-pic'),$('d-url'),$('d-file'),$('d-dedup'),$('d-artbrief'),$('d-artlines')].forEach(el=>el.addEventListener('change',saveS));
+[$('d-hint'),$('d-pic'),$('d-url'),$('d-file'),$('d-dedup'),$('d-artbrief'),$('d-artlines'),$('d-dropcapurl')].forEach(el=>el.addEventListener('change',saveS));
 $('d-artlines').addEventListener('input',saveS);
 $('d-arttriggers').addEventListener('input',saveS);
 $('d-shlabels').addEventListener('input',saveS);
+$('d-hinttriggers').addEventListener('input',saveS);
+$('d-pictriggers').addEventListener('input',saveS);
 $('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();run()}};
 
 // Dark mode

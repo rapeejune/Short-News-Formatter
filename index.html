@@ -345,6 +345,7 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const convertInlineBold=(s)=>s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
 
 // ===== Rich paste: แปลง HTML จาก Google Docs/เว็บ ให้จับ Heading/ตัวหนาอัตโนมัติ =====
 // รองรับทั้ง <h1>-<h6> จริง และ Heading ที่ Google Docs ส่งมาเป็น <span style="font-size:...;font-weight:700"> (ไม่ใช่ tag ความหมายจริง)
@@ -520,6 +521,7 @@ function run(){
   let awaitingSourceURL=false; // เพิ่งพ่นรูปแล้วเจอบรรทัดคำบรรยาย → บรรทัดถัดไปถ้าเป็นลิงก์ ให้ตัดทิ้ง (ไม่นับภาพเพิ่ม)
   let lastMarkerText=''; // มาร์กเกอร์ล่าสุดที่เจอ (ใช้ประกอบคำเตือนไฟล์ซ้ำ)
   const fileSeenMap=new Map(); // ชื่อไฟล์ (lowercase) → [{line, marker}] — สำหรับเตือนไฟล์ซ้ำ (ไม่ตัดอัตโนมัติ)
+  const urlSeenMap=new Map(); // ลิงก์ (lowercase) → [{line, marker}] — สำหรับเตือนลิงก์ซ้ำข้ามคลัสเตอร์ (ไม่ตัดอัตโนมัติ)
   const extractFilenamesForDupCheck=(s)=>{
     return s.split(/[\/\s]+/).map(p=>p.trim()).filter(p=>/\.(jpg|jpeg|png|webp|gif|heic|heif|tiff?)$/i.test(p));
   };
@@ -649,7 +651,13 @@ function run(){
     if(iH||iP||iU||iF){
       if(!clOn)clSt=i;clOn=true;
       if(iH)clHint++;if(iP){clPic++;lastMarkerText=ln;}
-      if(iU){if(dD.checked)clUrls.add(plain);else clUrls.add(plain+'#'+clUrls.size)}
+      if(iU){
+        if(dD.checked)clUrls.add(plain);else clUrls.add(plain+'#'+clUrls.size);
+        // เก็บลิงก์ไว้เช็คซ้ำข้ามคลัสเตอร์ (เตือนเฉยๆ ไม่ตัดอัตโนมัติ)
+        const ukey=plain.toLowerCase();
+        if(!urlSeenMap.has(ukey))urlSeenMap.set(ukey,[]);
+        urlSeenMap.get(ukey).push({line:i, marker:lastMarkerText});
+      }
       if(iF){
         clFile+=plain.split('/').map(p=>p.trim()).filter(Boolean).length;
         // เก็บชื่อไฟล์ไว้เช็คซ้ำ (เตือนเฉยๆ ไม่ตัดอัตโนมัติ)
@@ -700,15 +708,20 @@ function run(){
   }
   flush();
 
-  // ตรวจชื่อไฟล์ซ้ำ — เตือนเฉยๆ ไม่ตัดอัตโนมัติ (อาจเป็นการตั้งใจให้ทีมกราฟิกวางภาพติดกัน)
+  // ตรวจไฟล์/ลิงก์ซ้ำ — เตือนเฉยๆ ไม่ตัดอัตโนมัติ (อาจเป็นการตั้งใจให้ทีมกราฟิกวางภาพติดกัน)
   const dupWarnings=[];
-  fileSeenMap.forEach((occurrences,fname)=>{
-    if(occurrences.length>1){
-      const markerLabels=occurrences.map(o=>o.marker||('บรรทัด '+(o.line+1))).join(' และ ');
-      dupWarnings.push(`"${fname}" ซ้ำที่ ${markerLabels}`);
-      logs.push(`  ⚠️ ชื่อไฟล์ซ้ำ: "${fname}" ปรากฏที่ ${markerLabels}`);
-    }
-  });
+  const collectDupWarnings=(map,label)=>{
+    map.forEach((occurrences,key)=>{
+      if(occurrences.length>1){
+        const markerLabels=occurrences.map(o=>o.marker||('บรรทัด '+(o.line+1))).join(' และ ');
+        const shown=key.length>60?key.substring(0,60)+'…':key;
+        dupWarnings.push(`${label} "${shown}" ซ้ำที่ ${markerLabels}`);
+        logs.push(`  ⚠️ ${label}ซ้ำ: "${key}" ปรากฏที่ ${markerLabels}`);
+      }
+    });
+  };
+  collectDupWarnings(fileSeenMap,'ไฟล์');
+  collectDupWarnings(urlSeenMap,'ลิงก์');
 
   // Extract headings
   const headings=[];for(const l of bodyLines){const m=l.match(/^## \*\*(.+)\*\*$/);if(m)headings.push(m[1])}
@@ -741,11 +754,27 @@ ${items}
   </ul>
 </div>`;
   }
+  // แปลง **ตัวหนา** ที่อยู่กลางประโยค → <strong>ตัวหนา</strong> (สำหรับ HTML output) — ใช้ตัวที่ประกาศ global ด้านบน
   // Build full WP HTML (only active H2)
   if(bodyLines.length){
     const wp=[];let fpDone=false,tocIn=false,hIdx=0,origIdx=0;
+    let bulletBuf=[]; // บัฟเฟอร์เก็บบรรทัด bullet ติดกัน เพื่อรวมเป็น <ul><li> เดียว
+    const flushBullets=()=>{
+      if(!bulletBuf.length)return;
+      const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
+      wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+      bulletBuf=[];
+    };
     for(const l of bodyLines){
       if(l==='')continue;
+      // bullet detection: บรรทัดขึ้นต้นด้วย •
+      const bulletMatch=l.match(/^•\s*(.+)$/);
+      if(bulletMatch){
+        bulletBuf.push(bulletMatch[1]);
+        fpDone=true;
+        continue;
+      }
+      flushBullets(); // เจอบรรทัดที่ไม่ใช่ bullet → ปิด <ul> ที่ค้างอยู่ก่อน
       if(!tocIn&&fpDone&&activeH2.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
       const hm=l.match(/^## \*\*(.+)\*\*$/);
       if(hm){
@@ -758,8 +787,9 @@ ${items}
       if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
-      wp.push(`<span style="font-weight: 400;">${l}</span>`,'&nbsp;');fpDone=true;
+      wp.push(`<span style="font-weight: 400;">${convertInlineBold(l)}</span>`,'&nbsp;');fpDone=true;
     }
+    flushBullets(); // ปิด <ul> ค้างท้ายสุด (ถ้ามี)
     if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
     const cl=[];for(const b of wp){if(b==='&nbsp;'&&cl.length>0&&cl[cl.length-1]==='&nbsp;')continue;cl.push(b)}
     outputs.wphtml=cl.join('\n');
@@ -773,7 +803,7 @@ ${items}
   if(totalImgs>0){$('st-img').textContent='🖼 '+totalImgs;$('st-img').style.display=''}else $('st-img').style.display='none';
   if(headings.length>0){$('st-h2').textContent='H2: '+activeH2.length+'/'+headings.length;$('st-h2').style.display=''}else $('st-h2').style.display='none';
   if(dupWarnings.length>0){
-    $('st-dup').textContent='⚠️ ไฟล์ซ้ำ '+dupWarnings.length;
+    $('st-dup').textContent='⚠️ ซ้ำ '+dupWarnings.length;
     $('st-dup').title=dupWarnings.join('\n');
     $('st-dup').style.display='';
   }else{
@@ -856,8 +886,18 @@ function rebuildOutputs(){
   // Rebuild WP HTML
   if(bodyLines.length){
     const wp=[];let fpDone=false,tocIn=false,hIdx=0,origIdx=0;
+    let bulletBuf=[];
+    const flushBullets=()=>{
+      if(!bulletBuf.length)return;
+      const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
+      wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+      bulletBuf=[];
+    };
     for(const l of bodyLines){
       if(l==='')continue;
+      const bulletMatch=l.match(/^•\s*(.+)$/);
+      if(bulletMatch){bulletBuf.push(bulletMatch[1]);fpDone=true;continue}
+      flushBullets();
       if(!tocIn&&fpDone&&activeH2.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
       const hm=l.match(/^## \*\*(.+)\*\*$/);
       if(hm){
@@ -867,8 +907,9 @@ function rebuildOutputs(){
       if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
-      wp.push(`<span style="font-weight: 400;">${l}</span>`,'&nbsp;');fpDone=true;
+      wp.push(`<span style="font-weight: 400;">${convertInlineBold(l)}</span>`,'&nbsp;');fpDone=true;
     }
+    flushBullets();
     if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
     const cl=[];for(const b of wp){if(b==='&nbsp;'&&cl.length>0&&cl[cl.length-1]==='&nbsp;')continue;cl.push(b)}
     outputs.wphtml=cl.join('\n');

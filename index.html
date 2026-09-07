@@ -269,6 +269,25 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
       </div>
     </div>
     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
+      <p class="ht" style="margin-bottom:6px">📰 Newsletter Prelude — ตัดโซนเปิดเรื่อง (เท็กซ์ทำปก/บรีฟปก/Highlights)</p>
+      <label class="cki"><input type="checkbox" id="d-nlprelude" checked>
+        <div>
+          <div class="n">ตัดโซนเปิดเรื่อง Newsletter ทิ้งทั้งหมด</div>
+          <div class="d" style="font-size:10px;color:#aeaeb2">เจอ label เหล่านี้ → ตัดย่อหน้านั้นทิ้ง แล้วเผื่อข้ามย่อหน้าคั่นได้ตามจำนวนที่ตั้งไว้ ก่อนเจอ label ถัดไป</div>
+        </div>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;padding-left:28px">
+        <label style="font-size:11px;color:#6e6e73;white-space:nowrap">ระยะเผื่อ:</label>
+        <input type="number" id="d-nltolerance" value="1" min="0" max="5" style="width:50px;font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:3px 6px;outline:none;font-family:inherit">
+        <span style="font-size:10px;color:#aeaeb2">ย่อหน้า — จำนวนย่อหน้าไม่มี label คั่นได้ก่อนถือว่าจบโซน</span>
+      </div>
+      <div style="margin-top:6px;padding-left:28px;display:flex;flex-direction:column;gap:4px">
+        <label style="font-size:11px;color:#6e6e73">คำ label (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
+        <input type="text" id="d-nltriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:">
+        <p class="ht">ใช้กับงานแบบ Newsletter เท่านั้น — ถ้าไม่มี label เหล่านี้ในต้นฉบับ ฟีเจอร์นี้จะไม่ทำงานเลย ไม่กระทบข่าวปกติ</p>
+      </div>
+    </div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
       <p class="ht" style="margin-bottom:6px">📌 หัวข้อย่อย — ไม่ใส่ ## (เช่น วันที่, Label ข้อมูล)</p>
       <div style="display:flex;flex-direction:column;gap:4px">
         <label style="font-size:11px;color:#6e6e73">คำที่ขึ้นต้นแล้วถือเป็นหัวข้อย่อย (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
@@ -447,8 +466,8 @@ const CI_C={NEWS:'#e62227',POP:'#0000ff',WEALTH:'#c19380',LIFE:'#000000',SPORT:'
 
 // Storage
 const mem={};const sG=k=>{try{return localStorage.getItem(k)}catch{return mem[k]||null}};const sS=(k,v)=>{try{localStorage.setItem(k,v)}catch{mem[k]=v}};
-function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||15;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false}
-function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||15,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked}));run()}
+function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||15;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false;dNLP.checked=o.nlp!==false;dNLTol.value=o.nltol!==undefined?o.nltol:1;if(o.nlt)dNLT.value=o.nlt}
+function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||15,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked,nlp:dNLP.checked,nltol:parseInt(dNLTol.value),nlt:dNLT.value}));run()}
 
 // Tabs
 $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-content').className='mtab';$('sbar').className='sbar';run()};
@@ -468,7 +487,7 @@ document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
 }});
 
 // Image helpers
-const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl');
+const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl'),dNLP=$('d-nlprelude'),dNLTol=$('d-nltolerance'),dNLT=$('d-nltriggers');
 const isHint=s=>{if(!dH.checked)return false;const low=s.toLowerCase();const list=(dHT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
 const isPic=s=>{if(!dP.checked)return false;const low=s.toLowerCase();const list=(dPT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
 const isImgU=b=>dU.checked&&b;
@@ -518,6 +537,67 @@ function run(){
       // Other HTML tags → strip tags
       const stripped=t.replace(/<[^>]+>/g,'').trim();
       if(stripped)normalizedLines.push(stripped);
+    }
+  }
+
+  // === Newsletter Prelude — ตัดโซนเปิดเรื่อง (เท็กซ์ทำปก/บรีฟปก/Highlights ฯลฯ) ===
+  // ทำงานแบบ paragraph-level เพราะภาษาไทยไม่มีตัวพิมพ์ใหญ่-เล็กให้เช็คแบบ Art Brief
+  // หา paragraph แรกที่มี label ตรงกับ trigger → เริ่มโซน แล้วเดินหน้าต่อ:
+  //   - paragraph มี trigger → ตัดทิ้ง ต่อโซน
+  //   - paragraph ไม่มี trigger → เช็ค lookahead ตามระยะเผื่อ ถ้าเจอ trigger ในนั้น ตัดทิ้งด้วย (เป็นย่อหน้าคั่น)
+  //   - ถ้าไม่เจอ trigger ภายในระยะเผื่อ → จบโซนตรงนี้ (ไม่ตัด paragraph นี้)
+  const nlSkipLineSet=new Set();
+  if(dNLP.checked){
+    const nlTriggers=(dNLT.value||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+    const nlTolerance=Math.max(0,parseInt(dNLTol.value)||0);
+    if(nlTriggers.length){
+      // แบ่ง normalizedLines เป็น paragraph (คั่นด้วยบรรทัดว่าง)
+      const paragraphs=[]; // {lines:[idx,...], hasTrigger:bool}
+      let cur=[];
+      for(let i=0;i<normalizedLines.length;i++){
+        const t=normalizedLines[i].trim();
+        if(t===''){
+          if(cur.length){paragraphs.push(cur);cur=[]}
+        }else{
+          cur.push(i);
+        }
+      }
+      if(cur.length)paragraphs.push(cur);
+
+      const paraHasTrigger=(paraIdxArr)=>{
+        return paraIdxArr.some(idx=>{
+          const low=normalizedLines[idx].trim().toLowerCase();
+          return nlTriggers.some(t=>low.startsWith(t));
+        });
+      };
+
+      // หา paragraph แรกที่มี trigger
+      let startP=paragraphs.findIndex(p=>paraHasTrigger(p));
+      if(startP>-1){
+        let p=startP;
+        const skippedParaLogs=[];
+        while(p<paragraphs.length){
+          if(paraHasTrigger(paragraphs[p])){
+            paragraphs[p].forEach(idx=>nlSkipLineSet.add(idx));
+            skippedParaLogs.push(`P${p}(มี label)`);
+            p++;
+            continue;
+          }
+          // ไม่มี trigger ใน paragraph นี้ → เช็ค lookahead
+          let foundAhead=false;
+          for(let look=1;look<=nlTolerance&&(p+look)<paragraphs.length;look++){
+            if(paraHasTrigger(paragraphs[p+look])){foundAhead=true;break}
+          }
+          if(foundAhead){
+            paragraphs[p].forEach(idx=>nlSkipLineSet.add(idx));
+            skippedParaLogs.push(`P${p}(คั่นกลาง)`);
+            p++;
+            continue;
+          }
+          break; // จบโซน — paragraph นี้เป็นเนื้อหาจริง ไม่ตัด
+        }
+        logs.push(`📰 Newsletter Prelude: ตัดทิ้ง ${skippedParaLogs.length} ย่อหน้า [${skippedParaLogs.join(', ')}]`);
+      }
     }
   }
 
@@ -573,6 +653,7 @@ function run(){
   };
 
   for(let i=0;i<normalizedLines.length;i++){
+    if(nlSkipLineSet.has(i))continue; // ตัดทิ้งตามโซน Newsletter Prelude
     let ln=normalizedLines[i].trim();if(ln==='.')continue;ln=ln.replace(/\s{2,}/g,' ');
 
     // ตัดลิงก์แหล่งที่มาที่ตามหลังคำบรรยายภาพทันที (เช่น "[รูปที่ 1]" → คำบรรยาย → ลิงก์ Drive ซ้ำ)
@@ -1018,6 +1099,9 @@ $('d-arttriggers').addEventListener('input',saveS);
 $('d-shlabels').addEventListener('input',saveS);
 $('d-hinttriggers').addEventListener('input',saveS);
 $('d-pictriggers').addEventListener('input',saveS);
+$('d-nlprelude').addEventListener('change',saveS);
+$('d-nltolerance').addEventListener('input',saveS);
+$('d-nltriggers').addEventListener('input',saveS);
 $('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();run();try{localStorage.removeItem('nf_draft');localStorage.removeItem('nf_draft_time')}catch(e){}}};
 
 // Dark mode
@@ -1042,6 +1126,8 @@ $('btn-reset-imgsettings').addEventListener('click',()=>{
   dHT.value="แทรกภาพ,แทรกรูป,แทรก pic,(วางรูป,(แทรกรูป,(วางภาพ";
   dPT.value="รูปที่,ภาพที่";
   dDropCapUrl.checked=true;
+  dNLP.checked=true;dNLTol.value=1;
+  dNLT.value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:";
   saveS();
   showToast('↺ รีเซ็ตค่าเริ่มต้นแล้ว');
 });

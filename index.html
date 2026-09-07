@@ -277,7 +277,8 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 <div class="grid">
   <div class="col">
     <div class="col-lbl">ข้อความต้นฉบับ (Raw Text)</div>
-    <textarea id="txt-raw" placeholder="วางข้อความจาก Line ที่นี่..."></textarea>
+    <textarea id="txt-raw" placeholder="วางข้อความจาก Line หรือ Google Docs ที่นี่... (รองรับการวางแบบคง Heading/ตัวหนาจาก Docs อัตโนมัติ)"></textarea>
+    <p style="font-size:10px;color:#aeaeb2;margin-top:2px">💡 คัดลอกจาก Google Docs แล้ววางได้เลย — ระบบจะจับ Heading 2/3 และตัวหนาให้อัตโนมัติ (ไม่รองรับการวางแค่ลิงก์ไฟล์ เพราะเบราว์เซอร์ดึงเนื้อหาจาก Docs โดยตรงไม่ได้)</p>
   </div>
 
   <div class="col">
@@ -338,6 +339,83 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// ===== Rich paste: แปลง HTML จาก Google Docs/เว็บ ให้จับ Heading/ตัวหนาอัตโนมัติ =====
+// รองรับทั้ง <h1>-<h6> จริง และ Heading ที่ Google Docs ส่งมาเป็น <span style="font-size:...;font-weight:700"> (ไม่ใช่ tag ความหมายจริง)
+function parsePxSize(styleStr){
+  const m=(styleStr||'').match(/font-size:\s*([\d.]+)(pt|px)/i);
+  if(!m)return null;
+  let n=parseFloat(m[1]);
+  if(m[2].toLowerCase()==='pt')n=n*(96/72);
+  return n;
+}
+function getBlockFontInfo(el){
+  let maxSize=0,anyBold=false,hasText=false;
+  const spans=el.querySelectorAll('span,b,strong');
+  const nodes=spans.length?Array.from(spans):[el];
+  nodes.forEach(sp=>{
+    const style=sp.getAttribute?(sp.getAttribute('style')||''):'';
+    const sz=parsePxSize(style);
+    if(sz&&sz>maxSize)maxSize=sz;
+    const tag=(sp.tagName||'').toLowerCase();
+    const bold=tag==='b'||tag==='strong'||/font-weight:\s*(700|800|900|bold)/i.test(style);
+    const txt=(sp.textContent||'').trim();
+    if(bold&&txt)anyBold=true;
+    if(txt)hasText=true;
+  });
+  if(!hasText){const txt=(el.textContent||'').trim();if(txt)hasText=true;}
+  return {maxSize,anyBold,hasText};
+}
+function pasteInlineText(node){
+  let out='';
+  node.childNodes.forEach(child=>{
+    if(child.nodeType===3){out+=child.textContent;}
+    else if(child.nodeType===1){
+      const tag=child.tagName.toLowerCase();
+      const style=child.getAttribute?(child.getAttribute('style')||''):'';
+      const isBold=tag==='b'||tag==='strong'||/font-weight:\s*(700|800|900|bold)/i.test(style);
+      if(tag==='br'){out+='\n';}
+      else if(isBold){
+        const inner=pasteInlineText(child).trim();
+        out+=inner?('**'+inner+'**'):'';
+      }else{
+        out+=pasteInlineText(child);
+      }
+    }
+  });
+  return out;
+}
+function htmlPasteToMarkedText(html, isContentMode){
+  const wrap=document.createElement('div');
+  wrap.innerHTML=html;
+  const blocks=Array.from(wrap.querySelectorAll('p,div,li,h1,h2,h3,h4,h5,h6')).filter(el=>!el.querySelector('p,div,li,h1,h2,h3,h4,h5,h6'));
+  if(!blocks.length)return null; // ไม่มีโครงสร้าง block ให้แปลง — ปล่อยให้ paste แบบปกติ
+
+  const sizes=[];
+  blocks.forEach(b=>{const info=getBlockFontInfo(b);if(info.hasText&&info.maxSize)sizes.push(info.maxSize);});
+  sizes.sort((a,b)=>a-b);
+  const baseSize=sizes.length?sizes[Math.floor(sizes.length/2)]:0;
+
+  const lines=[];let firstHeadingSeen=false;
+  blocks.forEach(el=>{
+    const tag=el.tagName.toLowerCase();
+    const plainText=el.textContent.trim();
+    if(!plainText)return;
+    if(tag==='li'){lines.push('• '+plainText);return;}
+
+    const isSemanticHeading=/^h[1-6]$/.test(tag);
+    const info=getBlockFontInfo(el);
+    const isFontHeading=baseSize>0&&info.maxSize>=baseSize*1.2&&info.anyBold;
+
+    if(isSemanticHeading||isFontHeading){
+      if(!firstHeadingSeen&&!isContentMode){firstHeadingSeen=true;lines.push(plainText);}
+      else{firstHeadingSeen=true;lines.push('**'+plainText+'**');}
+      lines.push('');return;
+    }
+    lines.push(pasteInlineText(el));lines.push('');
+  });
+  return lines.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
 
 let mode='full',ciCat='NEWS',activeTab='raw';
 let outputs={formatted:'',wphtml:''};
@@ -775,6 +853,20 @@ function showToast(m){const t=$('toast');t.textContent=m;t.classList.add('show')
 
 // === EVENTS ===
 $('txt-raw').addEventListener('input',()=>{removedH2.clear();run()});
+$('txt-raw').addEventListener('paste',(e)=>{
+  const html=(e.clipboardData||window.clipboardData).getData('text/html');
+  if(!html||!html.trim())return; // ไม่มี HTML (เช่น copy จาก plain text) → ปล่อยให้ paste ปกติ
+  const converted=htmlPasteToMarkedText(html, mode==='content');
+  if(!converted)return; // แปลงไม่ได้ (ไม่มีโครงสร้าง) → ปล่อยให้ paste ปกติ
+  e.preventDefault();
+  const ta=e.target;
+  const start=ta.selectionStart,end=ta.selectionEnd;
+  const before=ta.value.slice(0,start),after=ta.value.slice(end);
+  ta.value=before+converted+after;
+  ta.selectionStart=ta.selectionEnd=start+converted.length;
+  removedH2.clear();run();
+  showToast('✨ วางจาก Google Docs แล้ว — จับ Heading/ตัวหนาให้อัตโนมัติ');
+});
 [$('inp-cat'),$('inp-pfx'),$('inp-author'),$('inp-toc')].forEach(el=>{el.addEventListener('input',saveS);el.addEventListener('change',saveS)});
 [$('d-hint'),$('d-pic'),$('d-url'),$('d-file'),$('d-dedup'),$('d-artbrief'),$('d-artlines'),$('d-dropcapurl')].forEach(el=>el.addEventListener('change',saveS));
 $('d-artlines').addEventListener('input',saveS);

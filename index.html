@@ -346,6 +346,12 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const convertInlineBold=(s)=>s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+// คำ label ที่ถ้าตามด้วย bullet list ของลิงก์ล้วนๆ ให้ใส่สีเทา #999999 (สไตล์ส่วนอ้างอิง)
+const REF_LABEL_TRIGGERS=['อ้างอิง','ที่มา','แหล่งที่มา','เรียบเรียงจาก','ขอบคุณข้อมูลจาก','source','reference'];
+const isRefLabelLine=(text)=>{
+  const low=text.replace(/\*/g,'').trim().toLowerCase();
+  return REF_LABEL_TRIGGERS.some(t=>low.startsWith(t));
+};
 
 // ===== Rich paste: แปลง HTML จาก Google Docs/เว็บ ให้จับ Heading/ตัวหนาอัตโนมัติ =====
 // รองรับทั้ง <h1>-<h6> จริง และ Heading ที่ Google Docs ส่งมาเป็น <span style="font-size:...;font-weight:700"> (ไม่ใช่ tag ความหมายจริง)
@@ -520,6 +526,7 @@ function run(){
   let clOn=false,clPic=0,clUrls=new Set(),clFile=0,clHint=0,clSt=-1,lastE=false;
   let awaitingSourceURL=false; // เพิ่งพ่นรูปแล้วเจอบรรทัดคำบรรยาย → บรรทัดถัดไปถ้าเป็นลิงก์ ให้ตัดทิ้ง (ไม่นับภาพเพิ่ม)
   let lastMarkerText=''; // มาร์กเกอร์ล่าสุดที่เจอ (ใช้ประกอบคำเตือนไฟล์ซ้ำ)
+  let inRefSection=false; // อยู่ในโซนอ้างอิง (หลังบรรทัด "อ้างอิง:"/"ที่มา:" ฯลฯ) → bullet ลิงก์ไม่ถือเป็นภาพ
   const fileSeenMap=new Map(); // ชื่อไฟล์ (lowercase) → [{line, marker}] — สำหรับเตือนไฟล์ซ้ำ (ไม่ตัดอัตโนมัติ)
   const urlSeenMap=new Map(); // ลิงก์ (lowercase) → [{line, marker}] — สำหรับเตือนลิงก์ซ้ำข้ามคลัสเตอร์ (ไม่ตัดอัตโนมัติ)
   const extractFilenamesForDupCheck=(s)=>{
@@ -629,6 +636,19 @@ function run(){
 
     // ข้ามเส้นคั่น (————, ______, ======, -------)
     if(/^[-_=—–─]{4,}$/.test(plain)){logs.push(`  ✂️ Separator(L${i}): skipped`);continue}
+
+    // โซนอ้างอิง: ถ้าอยู่ในโซนนี้ + บรรทัดเป็น bullet + ลิงก์ → เก็บเป็นข้อความปกติ (ไม่ใช่ภาพ)
+    const isBulletLine=/^[•·]\s*/.test(ln);
+    if(inRefSection&&isBulletLine&&isUrlC){
+      flush();
+      logs.push(`  🔗 RefLink(L${i}): "${ln.substring(0,50)}" → เก็บเป็นลิงก์อ้างอิง ไม่ใช่ภาพ`);
+      bodyLines.push(ln);
+      continue;
+    }
+    // ปรับสถานะโซนอ้างอิง: ตั้งค่าเมื่อเจอ label, ปิดเมื่อเจอข้อความปกติที่ไม่ใช่ bullet
+    if(!isBulletLine&&ln!==''){
+      inRefSection=isRefLabelLine(plain);
+    }
 
     // ภาพ: detection (ทั้ง full และ content mode)
     const photoMatch=plain.match(/^ภาพ\s*:\s*(.*)$/);
@@ -754,16 +774,32 @@ ${items}
   </ul>
 </div>`;
   }
-  // แปลง **ตัวหนา** ที่อยู่กลางประโยค → <strong>ตัวหนา</strong> (สำหรับ HTML output) — ใช้ตัวที่ประกาศ global ด้านบน
   // Build full WP HTML (only active H2)
   if(bodyLines.length){
     const wp=[];let fpDone=false,tocIn=false,hIdx=0,origIdx=0;
     let bulletBuf=[]; // บัฟเฟอร์เก็บบรรทัด bullet ติดกัน เพื่อรวมเป็น <ul><li> เดียว
+    let pendingRefLabelIdx=-1; // index ของ span label (เช่น "อ้างอิง:") ที่รอดูว่าจะตามด้วย bullet ลิงก์หรือไม่
     const flushBullets=()=>{
       if(!bulletBuf.length)return;
-      const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
-      wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+      const allUrls=bulletBuf.every(t=>{const tt=t.trim();return tt.startsWith('http://')||tt.startsWith('https://')});
+      if(allUrls){
+        const grey=pendingRefLabelIdx>=0;
+        const items=bulletBuf.map(u=>{
+          const url=u.trim();
+          return grey
+            ? `  <li><span style="color: #999999;"><a style="color: #999999;" href="${url}">${url}</a></span></li>`
+            : `  <li><a href="${url}">${url}</a></li>`;
+        }).join('\n');
+        wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+        if(grey){
+          wp[pendingRefLabelIdx]=wp[pendingRefLabelIdx].replace('font-weight: 400;','font-weight: 400; color: #999999;');
+        }
+      }else{
+        const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
+        wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+      }
       bulletBuf=[];
+      pendingRefLabelIdx=-1;
     };
     for(const l of bodyLines){
       if(l==='')continue;
@@ -787,7 +823,9 @@ ${items}
       if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
+      const spanIdx=wp.length;
       wp.push(`<span style="font-weight: 400;">${convertInlineBold(l)}</span>`,'&nbsp;');fpDone=true;
+      pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets(); // ปิด <ul> ค้างท้ายสุด (ถ้ามี)
     if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
@@ -887,11 +925,28 @@ function rebuildOutputs(){
   if(bodyLines.length){
     const wp=[];let fpDone=false,tocIn=false,hIdx=0,origIdx=0;
     let bulletBuf=[];
+    let pendingRefLabelIdx=-1;
     const flushBullets=()=>{
       if(!bulletBuf.length)return;
-      const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
-      wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+      const allUrls=bulletBuf.every(t=>{const tt=t.trim();return tt.startsWith('http://')||tt.startsWith('https://')});
+      if(allUrls){
+        const grey=pendingRefLabelIdx>=0;
+        const items=bulletBuf.map(u=>{
+          const url=u.trim();
+          return grey
+            ? `  <li><span style="color: #999999;"><a style="color: #999999;" href="${url}">${url}</a></span></li>`
+            : `  <li><a href="${url}">${url}</a></li>`;
+        }).join('\n');
+        wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+        if(grey){
+          wp[pendingRefLabelIdx]=wp[pendingRefLabelIdx].replace('font-weight: 400;','font-weight: 400; color: #999999;');
+        }
+      }else{
+        const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
+        wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
+      }
       bulletBuf=[];
+      pendingRefLabelIdx=-1;
     };
     for(const l of bodyLines){
       if(l==='')continue;
@@ -907,7 +962,9 @@ function rebuildOutputs(){
       if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
+      const spanIdx=wp.length;
       wp.push(`<span style="font-weight: 400;">${convertInlineBold(l)}</span>`,'&nbsp;');fpDone=true;
+      pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets();
     if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
@@ -930,7 +987,16 @@ function fbCopy(t){const a=document.createElement('textarea');a.value=t;Object.a
 function showToast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 
 // === EVENTS ===
-$('txt-raw').addEventListener('input',()=>{removedH2.clear();run()});
+let draftSaveTimer=null;
+$('txt-raw').addEventListener('input',()=>{
+  removedH2.clear();run();
+  // Auto-save draft (debounced) กันรีเฟรช/ปิดแท็บหลุดแล้วข้อความหาย
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer=setTimeout(()=>{
+    sS('nf_draft',$('txt-raw').value);
+    sS('nf_draft_time',String(Date.now()));
+  },400);
+});
 $('txt-raw').addEventListener('paste',(e)=>{
   const html=(e.clipboardData||window.clipboardData).getData('text/html');
   if(!html||!html.trim())return; // ไม่มี HTML (เช่น copy จาก plain text) → ปล่อยให้ paste ปกติ
@@ -952,7 +1018,7 @@ $('d-arttriggers').addEventListener('input',saveS);
 $('d-shlabels').addEventListener('input',saveS);
 $('d-hinttriggers').addEventListener('input',saveS);
 $('d-pictriggers').addEventListener('input',saveS);
-$('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();run()}};
+$('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();run();try{localStorage.removeItem('nf_draft');localStorage.removeItem('nf_draft_time')}catch(e){}}};
 
 // Dark mode
 function initDark(){const s=sG('nf_dark');const p=window.matchMedia('(prefers-color-scheme:dark)').matches;const dark=s?s==='1':p;document.body.classList.toggle('dark',dark);$('dm-btn').textContent=dark?'☀️':'🌙'}
@@ -980,7 +1046,27 @@ $('btn-reset-imgsettings').addEventListener('click',()=>{
   showToast('↺ รีเซ็ตค่าเริ่มต้นแล้ว');
 });
 
-loadS();run();
+loadS();
+
+// กู้คืนข้อความที่ค้างไว้ (auto-save) ถ้ามี — กันรีเฟรช/ปิดแท็บหลุดแล้วบทความหาย
+(function restoreDraft(){
+  const draft=sG('nf_draft');
+  const draftTime=sG('nf_draft_time');
+  if(draft&&draft.trim()&&!$('txt-raw').value.trim()){
+    $('txt-raw').value=draft;
+    run();
+    let whenText='ก่อนหน้านี้';
+    if(draftTime){
+      const mins=Math.round((Date.now()-parseInt(draftTime))/60000);
+      if(mins<1)whenText='เมื่อสักครู่';
+      else if(mins<60)whenText=`${mins} นาทีที่แล้ว`;
+      else whenText=`${Math.round(mins/60)} ชม.ที่แล้ว`;
+    }
+    showToast('📋 กู้คืนข้อความที่ค้างไว้ ('+whenText+')');
+  }else{
+    run();
+  }
+})();
 </script>
 </body>
 </html>

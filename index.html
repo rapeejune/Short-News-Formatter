@@ -293,6 +293,7 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
         <span class="bdg" id="st-ch">0 อักษร</span>
         <span class="bdg im" id="st-img" style="display:none">🖼 0</span>
         <span class="bdg h2b" id="st-h2" style="display:none">H2: 0</span>
+        <span class="bdg" id="st-dup" style="display:none;color:#dc2626;background:#fef2f2;cursor:help" title="">⚠️ ไฟล์ซ้ำ</span>
       </div>
     </div>
 
@@ -471,7 +472,7 @@ const isRef=url=>{try{const h=new URL(url).hostname.replace(/^www\./,'');return 
 // === MAIN ===
 function run(){
   const raw=$('txt-raw').value,logs=[];
-  if(!raw.trim()){outputs={formatted:'',wphtml:''};parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};$('st-ch').textContent='0 อักษร';$('st-img').style.display='none';$('st-h2').style.display='none';$('out-raw').value='';$('out-html').textContent='';$('out-prev').innerHTML='<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div><small>จะแสดง Preview ให้ทันที</small></div>';$('dbg-log').textContent='';return}
+  if(!raw.trim()){outputs={formatted:'',wphtml:''};parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};$('st-ch').textContent='0 อักษร';$('st-img').style.display='none';$('st-h2').style.display='none';$('st-dup').style.display='none';$('out-raw').value='';$('out-html').textContent='';$('out-prev').innerHTML='<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div><small>จะแสดง Preview ให้ทันที</small></div>';$('dbg-log').textContent='';return}
 
   const lines=raw.split('\n');
 
@@ -517,6 +518,11 @@ function run(){
   let hFound=false,inBody=false,totalImgs=0;
   let clOn=false,clPic=0,clUrls=new Set(),clFile=0,clHint=0,clSt=-1,lastE=false;
   let awaitingSourceURL=false; // เพิ่งพ่นรูปแล้วเจอบรรทัดคำบรรยาย → บรรทัดถัดไปถ้าเป็นลิงก์ ให้ตัดทิ้ง (ไม่นับภาพเพิ่ม)
+  let lastMarkerText=''; // มาร์กเกอร์ล่าสุดที่เจอ (ใช้ประกอบคำเตือนไฟล์ซ้ำ)
+  const fileSeenMap=new Map(); // ชื่อไฟล์ (lowercase) → [{line, marker}] — สำหรับเตือนไฟล์ซ้ำ (ไม่ตัดอัตโนมัติ)
+  const extractFilenamesForDupCheck=(s)=>{
+    return s.split(/[\/\s]+/).map(p=>p.trim()).filter(p=>/\.(jpg|jpeg|png|webp|gif|heic|heif|tiff?)$/i.test(p));
+  };
 
   // Art brief skip state
   let abSkipping=false,abRemain=0;
@@ -642,9 +648,18 @@ function run(){
     let iH=isHint(plain),iP=isPic(ln),iR=isUrlC&&isRef(plain),iU=!iR&&isImgU(isUrlC),iF=isFn(plain);
     if(iH||iP||iU||iF){
       if(!clOn)clSt=i;clOn=true;
-      if(iH)clHint++;if(iP)clPic++;
+      if(iH)clHint++;if(iP){clPic++;lastMarkerText=ln;}
       if(iU){if(dD.checked)clUrls.add(plain);else clUrls.add(plain+'#'+clUrls.size)}
-      if(iF)clFile+=plain.split('/').map(p=>p.trim()).filter(Boolean).length;
+      if(iF){
+        clFile+=plain.split('/').map(p=>p.trim()).filter(Boolean).length;
+        // เก็บชื่อไฟล์ไว้เช็คซ้ำ (เตือนเฉยๆ ไม่ตัดอัตโนมัติ)
+        const fnames=extractFilenamesForDupCheck(plain);
+        for(const fn of fnames){
+          const key=fn.toLowerCase();
+          if(!fileSeenMap.has(key))fileSeenMap.set(key,[]);
+          fileSeenMap.get(key).push({line:i, marker:lastMarkerText});
+        }
+      }
       logs.push(`  📸 Image(L${i}): "${ln.substring(0,50)}" h=${iH} p=${iP} u=${iU} f=${iF}`);
       continue;
     }
@@ -684,6 +699,16 @@ function run(){
     bodyLines.push(ln);
   }
   flush();
+
+  // ตรวจชื่อไฟล์ซ้ำ — เตือนเฉยๆ ไม่ตัดอัตโนมัติ (อาจเป็นการตั้งใจให้ทีมกราฟิกวางภาพติดกัน)
+  const dupWarnings=[];
+  fileSeenMap.forEach((occurrences,fname)=>{
+    if(occurrences.length>1){
+      const markerLabels=occurrences.map(o=>o.marker||('บรรทัด '+(o.line+1))).join(' และ ');
+      dupWarnings.push(`"${fname}" ซ้ำที่ ${markerLabels}`);
+      logs.push(`  ⚠️ ชื่อไฟล์ซ้ำ: "${fname}" ปรากฏที่ ${markerLabels}`);
+    }
+  });
 
   // Extract headings
   const headings=[];for(const l of bodyLines){const m=l.match(/^## \*\*(.+)\*\*$/);if(m)headings.push(m[1])}
@@ -747,6 +772,13 @@ ${items}
   $('st-ch').textContent=ch.toLocaleString()+' อักษร / '+wo.toLocaleString()+' คำ';
   if(totalImgs>0){$('st-img').textContent='🖼 '+totalImgs;$('st-img').style.display=''}else $('st-img').style.display='none';
   if(headings.length>0){$('st-h2').textContent='H2: '+activeH2.length+'/'+headings.length;$('st-h2').style.display=''}else $('st-h2').style.display='none';
+  if(dupWarnings.length>0){
+    $('st-dup').textContent='⚠️ ไฟล์ซ้ำ '+dupWarnings.length;
+    $('st-dup').title=dupWarnings.join('\n');
+    $('st-dup').style.display='';
+  }else{
+    $('st-dup').style.display='none';
+  }
   $('dbg-log').textContent=logs.length?logs.join('\n'):'';
 
   // Render all panels

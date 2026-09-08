@@ -126,7 +126,9 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 .out-card{background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.08);overflow:hidden;display:flex;flex-direction:column;min-height:460px}
 
 /* Output tabs */
-.otabs{display:flex;border-bottom:1px solid rgba(0,0,0,.08);overflow-x:auto}
+.otabs{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,0,0,.08);padding-right:10px;gap:8px}
+.otabs-left{display:flex;overflow-x:auto;flex:1;min-width:0}
+.cbtn-top{flex-shrink:0}
 .otab{padding:10px 16px;font-size:12px;font-weight:500;color:#6e6e73;cursor:pointer;border:none;background:none;border-bottom:2.5px solid transparent;white-space:nowrap;transition:.15s;font-family:inherit;display:flex;align-items:center;gap:5px}
 .otab:hover{color:#1d1d1f}
 .otab.on{color:#e62227;border-bottom-color:#e62227}
@@ -184,6 +186,27 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
   <div><h1><span class="hdr-dot"></span> News Formatter + TOC</h1><p>จัดฟอร์แมตข่าว + สร้างสารบัญ H2 พร้อมแถบสี CI</p></div>
   <div style="display:flex;gap:6px;align-items:center"><button class="dm-btn" id="dm-btn" title="Dark mode">🌙</button><button class="btn-sm" id="btn-clear">🗑 ล้างทั้งหมด</button></div>
 </div>
+
+<details class="pnl" id="tagcleaner-panel">
+  <summary>🏷️ จัดแท็ก (Tag Cleaner) — แปลงเป็น comma list ไม่ซ้ำ</summary>
+  <div class="pb">
+    <p class="ht">วางแท็กที่ก๊อปมาได้เลย ไม่ว่าจะเป็นแบบ WordPress ("Remove term: ...") หรือแบบ #hashtag — ระบบจะแปลงเป็น <strong>คำ,คำ,คำ</strong> คั่นด้วยคอมม่า ไม่มีคำซ้ำให้อัตโนมัติ</p>
+    <div class="grid" style="gap:10px">
+      <div class="col">
+        <div class="col-lbl" style="font-size:11px">วางแท็กดิบ</div>
+        <textarea id="tag-raw" placeholder="เช่น&#10;Remove term: รองเท้าแฟชั่น&#10; รองเท้าแฟชั่น&#10;Remove term: ธุรกิจแฟชั่น&#10; ธุรกิจแฟชั่น&#10;&#10;หรือ&#10;#รองเท้าแฟชั่น #วงการแฟชั่นไทย #ธุรกิจแฟชั่น" style="min-height:140px;font-size:12px"></textarea>
+      </div>
+      <div class="col">
+        <div class="col-lbl" style="font-size:11px">
+          <span>ผลลัพธ์ (คั่นด้วย , ไม่ซ้ำ)</span>
+          <span class="bdg" id="tag-count" style="display:none">0 แท็ก</span>
+        </div>
+        <textarea id="tag-out" readonly placeholder="ผลลัพธ์จะแสดงที่นี่..." style="min-height:140px;font-size:12px;background:#f8f8f8"></textarea>
+        <button class="cbtn" id="tag-copy-btn" style="align-self:flex-end" onclick="doCopyTags(this)">📋 Copy แท็ก</button>
+      </div>
+    </div>
+  </div>
+</details>
 
 <div class="mtabs">
   <button class="mtab on" id="mt-full">ฟอร์แมตลงเว็บ</button>
@@ -317,11 +340,14 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
     </div>
 
     <div class="out-card">
-      <!-- 3 tabs -->
+      <!-- 3 tabs + Copy button (always copies the active tab) -->
       <div class="otabs">
-        <button class="otab on" data-t="raw"><span class="dot"></span> ข้อความจัดแล้ว</button>
-        <button class="otab" data-t="html"><span class="dot"></span> HTML Code</button>
-        <button class="otab" data-t="prev"><span class="dot"></span> Preview</button>
+        <div class="otabs-left">
+          <button class="otab on" data-t="raw"><span class="dot"></span> ข้อความจัดแล้ว</button>
+          <button class="otab" data-t="html"><span class="dot"></span> HTML Code</button>
+          <button class="otab" data-t="prev"><span class="dot"></span> Preview</button>
+        </div>
+        <button class="cbtn cbtn-top" id="cp-top" onclick="doCopyActive(this)">📝 Copy</button>
       </div>
 
       <!-- Panel 1: Raw formatted -->
@@ -329,7 +355,6 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
         <textarea class="raw-area" id="out-raw" readonly placeholder="ข้อความจัดฟอร์แมตแล้วจะแสดงที่นี่..."></textarea>
         <div class="cpbar">
           <span class="info">มี .img1 · มี ## **หัวข้อ** · วางใน CMS ได้เลย</span>
-          <button class="cbtn" id="cp-raw" onclick="doCopy('formatted','ข้อความจัดแล้ว',this)">📝 Copy</button>
         </div>
       </div>
 
@@ -338,7 +363,6 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
         <div class="html-area" id="out-html"></div>
         <div class="cpbar">
           <span class="info">TOC + H2 มีแถบสี + &lt;span&gt; ครอบย่อหน้า · วาง WordPress Text mode</span>
-          <button class="cbtn" id="cp-html" onclick="doCopy('wphtml','HTML Code',this)">🧩 Copy</button>
         </div>
       </div>
 
@@ -348,8 +372,7 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
           <div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div><small>จะแสดง Preview ให้ทันที</small></div>
         </div>
         <div class="cpbar">
-          <span class="info">Preview เท่านั้น — กดแท็บอื่นเพื่อ Copy</span>
-          <span></span>
+          <span class="info">Preview เท่านั้น — ดูรูปแบบก่อนคัดลอกจากแท็บอื่น</span>
         </div>
       </div>
     </div>
@@ -472,7 +495,7 @@ function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").
 // Tabs
 $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-content').className='mtab';$('sbar').className='sbar';run()};
 $('mt-content').onclick=()=>{mode='content';$('mt-content').className='mtab on';$('mt-full').className='mtab';$('sbar').className='sbar hide';run()};
-document.querySelector('.otabs').addEventListener('click',e=>{const t=e.target.closest('.otab');if(!t)return;activeTab=t.dataset.t;document.querySelectorAll('.otab').forEach(x=>x.classList.toggle('on',x.dataset.t===activeTab));document.querySelectorAll('.opanel').forEach(p=>p.classList.remove('show'));$('pn-'+activeTab).classList.add('show')});
+document.querySelector('.otabs-left').addEventListener('click',e=>{const t=e.target.closest('.otab');if(!t)return;activeTab=t.dataset.t;document.querySelectorAll('.otab').forEach(x=>x.classList.toggle('on',x.dataset.t===activeTab));document.querySelectorAll('.opanel').forEach(p=>p.classList.remove('show'));$('pn-'+activeTab).classList.add('show');updateTopCopyBtn()});
 document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
   const prev=ciCat;
   document.querySelectorAll('.ci-d').forEach(x=>x.classList.remove('on'));d.classList.add('on');ciCat=d.dataset.ci;
@@ -1064,8 +1087,70 @@ function doCopy(which,label,btn){
   const ok=()=>{showToast('✅ Copied '+label);if(btn){const orig=btn.innerHTML;btn.classList.add('ok');btn.textContent='✅ Copied!';setTimeout(()=>{btn.classList.remove('ok');btn.innerHTML=orig},1500)}};
   if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(ok).catch(()=>{fbCopy(text);ok()});else{fbCopy(text);ok()}
 }
+// แผนที่ tab → {output key, label, ปุ่ม icon} — ใช้กับปุ่ม Copy เดียวด้านบนที่คัดลอกตามแท็บที่เปิดอยู่
+const TAB_COPY_MAP={
+  raw:{which:'formatted',label:'ข้อความจัดแล้ว',icon:'📝 Copy'},
+  html:{which:'wphtml',label:'HTML Code',icon:'🧩 Copy'},
+  prev:{which:null,label:'',icon:'👁 Preview เท่านั้น'}
+};
+function updateTopCopyBtn(){
+  const cfg=TAB_COPY_MAP[activeTab];
+  const btn=$('cp-top');
+  btn.textContent=cfg.icon;
+  btn.disabled=!cfg.which;
+  btn.style.opacity=cfg.which?'1':'.5';
+  btn.style.cursor=cfg.which?'pointer':'default';
+}
+function doCopyActive(btn){
+  const cfg=TAB_COPY_MAP[activeTab];
+  if(!cfg.which)return; // Preview tab has nothing to copy
+  doCopy(cfg.which,cfg.label,btn);
+}
 function fbCopy(t){const a=document.createElement('textarea');a.value=t;Object.assign(a.style,{position:'fixed',top:0,left:0,opacity:0});document.body.appendChild(a);a.focus();a.select();try{document.execCommand('copy')}catch{}document.body.removeChild(a)}
 function showToast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+
+// === Tag Cleaner: แปลง "Remove term: X" / "#tag1 #tag2" ให้เป็น comma list ไม่ซ้ำ ===
+function cleanTags(raw){
+  const seen=new Set();
+  const tags=[];
+  const addTag=(t)=>{
+    t=t.replace(/^#+/,'').trim();
+    if(!t)return;
+    const key=t.toLowerCase();
+    if(!seen.has(key)){seen.add(key);tags.push(t)}
+  };
+  const lines=(raw||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  for(const line of lines){
+    const m=line.match(/^Remove term:\s*(.+)$/i);
+    if(m){addTag(m[1]);continue}
+    if(line.includes('#')){
+      const parts=line.split('#').map(s=>s.trim()).filter(Boolean);
+      parts.forEach(p=>addTag(p));
+      continue;
+    }
+    addTag(line);
+  }
+  return tags;
+}
+function runTagCleaner(){
+  const raw=$('tag-raw').value;
+  const tags=cleanTags(raw);
+  const out=tags.join(',');
+  $('tag-out').value=out;
+  if(tags.length>0){
+    $('tag-count').textContent=tags.length+' แท็ก';
+    $('tag-count').style.display='';
+  }else{
+    $('tag-count').style.display='none';
+  }
+}
+function doCopyTags(btn){
+  const text=$('tag-out').value;
+  if(!text)return;
+  const ok=()=>{showToast('✅ Copied แท็กแล้ว');if(btn){const orig=btn.innerHTML;btn.classList.add('ok');btn.textContent='✅ Copied!';setTimeout(()=>{btn.classList.remove('ok');btn.innerHTML=orig},1500)}};
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(ok).catch(()=>{fbCopy(text);ok()});else{fbCopy(text);ok()}
+}
+$('tag-raw').addEventListener('input',runTagCleaner);
 
 // === EVENTS ===
 let draftSaveTimer=null;
@@ -1111,10 +1196,11 @@ initDark();
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){
     e.preventDefault();
-    if(activeTab==='raw')doCopy('formatted','ข้อความจัดแล้ว',$('cp-raw'));
-    else if(activeTab==='html')doCopy('wphtml','HTML Code',$('cp-html'));
+    doCopyActive($('cp-top'));
   }
 });
+
+updateTopCopyBtn();
 
 // รีเซ็ตค่าตรวจจับภาพ/Art Brief กลับเป็นค่าเริ่มต้น (แก้ปัญหา checkbox ค้างปิดจากการทดสอบก่อนหน้า)
 $('btn-reset-imgsettings').addEventListener('click',()=>{

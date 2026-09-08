@@ -1128,6 +1128,12 @@ function cleanTags(raw){
       parts.forEach(p=>addTag(p));
       continue;
     }
+    // รองรับกรณีวางมาแบบคั่นด้วยคอมม่า/เซมิโคลอนอยู่แล้ว (เช่น "tag1, tag2, tag3")
+    if(line.includes(',')||line.includes(';')){
+      const parts=line.split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+      parts.forEach(p=>addTag(p));
+      continue;
+    }
     addTag(line);
   }
   return tags;

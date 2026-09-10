@@ -1110,19 +1110,57 @@ function fbCopy(t){const a=document.createElement('textarea');a.value=t;Object.a
 function showToast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 
 // === Tag Cleaner: แปลง "Remove term: X" / "#tag1 #tag2" ให้เป็น comma list ไม่ซ้ำ ===
+// ตรวจว่าข้อความเป็น "X X" (ชื่อแท็กซ้ำตัวเองในบรรทัดเดียว) → เหลือแค่ X
+// ใช้วิธีตัดคำด้วยช่องว่าง (รองรับเว้นวรรคหลายแบบ: เว้น 2 ที, tab, non-breaking space ฯลฯ) แทนการนับตำแหน่งตัวอักษรตรงกลาง
+function dedupSelfRepeat(s){
+  const t=s.trim();
+  const words=t.split(/\s+/).filter(Boolean);
+  const n=words.length;
+  if(n>=2&&n%2===0){
+    const half=n/2;
+    const left=words.slice(0,half).join(' ');
+    const right=words.slice(half).join(' ');
+    if(left===right&&left.length>0)return left;
+  }
+  return t;
+}
+// ตัด bullet/เลขลิสต์ที่หลุดติดหัวหรือท้ายข้อความ (เช่นบูลเล็ตของรายการถัดไปที่หลุดมาติดท้ายเพราะไม่มีบรรทัดใหม่คั่น)
+function stripBulletMarkers(s){
+  return s
+    .replace(/^[*•‣▪○●\-–—]+\s*/,'')
+    .replace(/^\d+[.)]\s*/,'')
+    .replace(/\s*[*•‣▪○●\-–—]+\s*$/,'')
+    .replace(/\s*\d+[.)]\s*$/,'')
+    .trim();
+}
 function cleanTags(raw){
   const seen=new Set();
   const tags=[];
   const addTag=(t)=>{
     t=t.replace(/^#+/,'').trim();
+    t=dedupSelfRepeat(t); // เผื่อกรณี "Asean Asean" ซ้ำตัวเองในก้อนเดียว
     if(!t)return;
     const key=t.toLowerCase();
     if(!seen.has(key)){seen.add(key);tags.push(t)}
   };
-  const lines=(raw||'').split('\n').map(l=>l.trim()).filter(Boolean);
+
+  let text=raw||'';
+
+  // ขั้นที่ 1: ถ้ามี "Remove term:" อยู่ในข้อความ ให้ใช้มันเป็นตัวคั่นรายการโดยตรง
+  // เพราะบางระบบก๊อปมาแบบไม่มีบรรทัดใหม่คั่นระหว่างรายการเลย (ติดกันเป็นพืดเดียว)
+  if(/Remove term:/i.test(text)){
+    const chunks=text.split(/Remove term:\s*/i)
+      .map(c=>stripBulletMarkers(c.trim()))
+      .filter(Boolean);
+    chunks.forEach(c=>addTag(c));
+    return tags; // ประมวลผลแบบนี้ครบแล้ว ไม่ต้องเดินตรรกะบรรทัดข้างล่างซ้ำ
+  }
+
+  // ขั้นที่ 2: ไม่มี "Remove term:" เลย → ใช้ตรรกะเดิม (บรรทัดต่อบรรทัด, #hashtag, คอมม่า/เซมิโคลอน)
+  const lines=text.split('\n')
+    .map(l=>stripBulletMarkers(l.trim()))
+    .filter(Boolean);
   for(const line of lines){
-    const m=line.match(/^Remove term:\s*(.+)$/i);
-    if(m){addTag(m[1]);continue}
     if(line.includes('#')){
       const parts=line.split('#').map(s=>s.trim()).filter(Boolean);
       parts.forEach(p=>addTag(p));

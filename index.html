@@ -825,7 +825,10 @@ function run(){
     const flushedN=flush();
     let isHd=ln.startsWith('**')&&ln.endsWith('**')&&!ln.startsWith('**ภาพ:**')&&!ln.startsWith('**ภาพ :**');
     let isBH=ln.startsWith('• **')&&ln.endsWith('**')&&!ln.startsWith('• **ภาพ:**');
-    if(flushedN>0&&!isHd&&!isBH&&dDropCapUrl.checked){
+    // เช็คว่าเป็น "อีโมจิ/สัญลักษณ์ + **ข้อความ**" เช่น "🟡 **หัวข้อ**" (นักเขียนบางคนใช้อีโมจิสีแทน bullet)
+    const emojiHeadingMatch=(!isHd&&!isBH)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s*\*\*(.+)\*\*$/u):null;
+    let isEmojiH=!!emojiHeadingMatch;
+    if(flushedN>0&&!isHd&&!isBH&&!isEmojiH&&dDropCapUrl.checked){
       awaitingSourceURL=true;
       logs.push(`  📎 Caption candidate(L${i}): "${ln.substring(0,40)}" — ถ้าบรรทัดถัดไปเป็นลิงก์จะตัดทิ้ง`);
     }
@@ -843,6 +846,15 @@ function run(){
         logs.push(`  📌 SubLabel bullet(L${i}): "${inner.substring(0,40)}" → ไม่ใส่ ##`);
       }else{
         ln='## '+strippedBullet;
+      }
+    }else if(isEmojiH){
+      const inner=emojiHeadingMatch[1];
+      if(isSubLabel(inner)){
+        logs.push(`  📌 SubLabel emoji(L${i}): "${inner.substring(0,40)}" → ไม่ใส่ ##`);
+      }else{
+        // ตัดอีโมจิออก แปลงเป็นรูปแบบมาตรฐาน "## **ข้อความ**" เพื่อให้ TOC/WordPress H2 จับได้ปกติ
+        ln='## **'+inner+'**';
+        logs.push(`  🟡 EmojiHeading(L${i}): "${inner.substring(0,40)}" → ## **...**`);
       }
     }
     bodyLines.push(ln);

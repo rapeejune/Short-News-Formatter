@@ -151,6 +151,7 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 .prev-area .p-meta{font-size:12px;color:#86868b;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f0f0f0}
 .prev-area .p-meta strong{color:#1d1d1f}
 .prev-area .p-para{margin-bottom:14px}
+.prev-area .p-para a{color:#0071e3;text-decoration:underline}
 .prev-area .p-img{background:#f0f0f0;border:2px dashed #d2d2d7;border-radius:10px;padding:24px;text-align:center;color:#aeaeb2;font-size:12px;margin:14px 0}
 .prev-area .p-toc{background:#fff;border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.1);margin:18px 0}
 .prev-area .p-toc h3{font-size:17px;font-weight:700;margin-bottom:4px}
@@ -279,6 +280,15 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
     </div>
 
     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
+      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-moreinfolinks" checked>
+        <div>
+          <div class="n">ฝังลิงก์ให้ "More Info: ชื่อ1 , ชื่อ2" อัตโนมัติ</div>
+          <div class="d" style="font-size:10px;color:#aeaeb2">ดึง URL จากบรรทัด "(Tag IG: url)" / "(Tag FB: url)" ที่ตามมา แล้วจับคู่ชื่อกับลิงก์ให้เอง (เทียบชื่อคร่าวๆ กับ URL) — ตัดบรรทัด Tag ทิ้งหลังใช้แล้ว</div>
+        </div>
+      </label>
+    </div>
+
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
       <p class="ht" style="margin-bottom:6px">🎨 Art Brief — ข้อความบรีฟอาร์ตที่ไม่ใช่เนื้อข่าว</p>
       <label class="cki"><input type="checkbox" id="d-artbrief" checked>
         <div>
@@ -393,7 +403,26 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const convertInlineBold=(s)=>s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+const convertInlineBold=(s)=>s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+// แปลง markdown-link ชั่วคราว [ข้อความ](url) → <a href="url">ข้อความ</a> (ใช้ตอนสร้าง WordPress HTML)
+const convertInlineLinks=(s)=>s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,(m,text,url)=>`<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`);
+const convertInlineFormatting=(s)=>convertInlineBold(convertInlineLinks(s));
+// ปรับข้อความให้เหลือแค่ตัวอักษร/ตัวเลข (ไทย+อังกฤษ) ตัวพิมพ์เล็ก ไม่มีวรรณยุกต์กำกับเสียง เพื่อเทียบชื่อกับ URL แบบคร่าวๆ
+const normalizeForMatch=(s)=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9ก-๙]/g,'');
+// ดึง handle ส่วนท้ายของ URL (เช่น "tarinecafe" จาก instagram.com/tarinecafe/) มาเทียบ ไม่เทียบทั้ง URL เพราะ domain จะไปบังการจับคู่
+const extractUrlHandle=(url)=>{
+  try{
+    const u=new URL(url);
+    const parts=u.pathname.split('/').filter(Boolean);
+    return parts[parts.length-1]||u.hostname;
+  }catch(e){return url;}
+};
+// เทียบว่าชื่อกับ URL "คล้าย" กันไหม (เช็คแบบ substring ทั้ง 2 ทาง เผื่อชื่อยาว/สั้นกว่า handle จริง)
+const namesLikelyMatch=(name,url)=>{
+  const n=normalizeForMatch(name),h=normalizeForMatch(extractUrlHandle(url));
+  if(!n||!h)return false;
+  return h.includes(n)||n.includes(h);
+};
 // คำ label ที่ถ้าตามด้วย bullet list ของลิงก์ล้วนๆ ให้ใส่สีเทา #999999 (สไตล์ส่วนอ้างอิง)
 const REF_LABEL_TRIGGERS=['อ้างอิง','ที่มา','แหล่งที่มา','เรียบเรียงจาก','ขอบคุณข้อมูลจาก','source','reference'];
 const isRefLabelLine=(text)=>{
@@ -427,6 +456,17 @@ function getBlockFontInfo(el){
   if(!hasText){const txt=(el.textContent||'').trim();if(txt)hasText=true;}
   return {maxSize,anyBold,hasText};
 }
+// Google Docs เวลา copy จะห่อลิงก์ด้วย redirect ของตัวเอง เช่น
+// https://www.google.com/url?q=https://จริง.com/path&sa=D&source=... ต้องแกะเอา URL จริงออกมา
+function extractRealUrl(href){
+  try{
+    const u=new URL(href);
+    if(/(^|\.)google\.com$/.test(u.hostname)&&u.pathname==='/url'&&u.searchParams.has('q')){
+      return u.searchParams.get('q');
+    }
+  }catch(e){}
+  return href;
+}
 function pasteInlineText(node){
   let out='';
   node.childNodes.forEach(child=>{
@@ -436,9 +476,22 @@ function pasteInlineText(node){
       const style=child.getAttribute?(child.getAttribute('style')||''):'';
       const isBold=tag==='b'||tag==='strong'||/font-weight:\s*(700|800|900|bold)/i.test(style);
       if(tag==='br'){out+='\n';}
-      else if(isBold){
+      else if(tag==='a'){
+        const href=child.getAttribute?(child.getAttribute('href')||''):'';
         const inner=pasteInlineText(child).trim();
-        out+=inner?('**'+inner+'**'):'';
+        if(href&&inner){
+          const realHref=extractRealUrl(href);
+          out+=`[${inner}](${realHref})`; // เก็บเป็น markdown-link ชั่วคราว จะแปลงเป็น <a> ตอนสร้าง WordPress HTML
+        }else{
+          out+=inner;
+        }
+      }
+      else if(isBold){
+        const rawInner=pasteInlineText(child);
+        const inner=rawInner.trim();
+        const lead=/^\s/.test(rawInner)?' ':'';
+        const trail=/\s$/.test(rawInner)?' ':'';
+        out+=inner?(lead+'**'+inner+'**'+trail):rawInner;
       }else{
         out+=pasteInlineText(child);
       }
@@ -512,8 +565,8 @@ const CI_C={NEWS:'#e62227',POP:'#0000ff',WEALTH:'#c19380',LIFE:'#000000',SPORT:'
 
 // Storage
 const mem={};const sG=k=>{try{return localStorage.getItem(k)}catch{return mem[k]||null}};const sS=(k,v)=>{try{localStorage.setItem(k,v)}catch{mem[k]=v}};
-function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||2;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false;dNLP.checked=o.nlp!==false;dNLTol.value=o.nltol!==undefined?o.nltol:1;if(o.nlt)dNLT.value=o.nlt;dBareNum.checked=o.bn!==false}
-function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||15,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked,nlp:dNLP.checked,nltol:parseInt(dNLTol.value),nlt:dNLT.value,bn:dBareNum.checked}));run()}
+function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||2;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false;dNLP.checked=o.nlp!==false;dNLTol.value=o.nltol!==undefined?o.nltol:1;if(o.nlt)dNLT.value=o.nlt;dBareNum.checked=o.bn!==false;dMoreInfoLinks.checked=o.mil!==false}
+function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||2,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked,nlp:dNLP.checked,nltol:parseInt(dNLTol.value),nlt:dNLT.value,bn:dBareNum.checked,mil:dMoreInfoLinks.checked}));run()}
 
 // Tabs
 $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-content').className='mtab';$('sbar').className='sbar';run()};
@@ -533,7 +586,7 @@ document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
 }});
 
 // Image helpers
-const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl'),dNLP=$('d-nlprelude'),dNLTol=$('d-nltolerance'),dNLT=$('d-nltriggers'),dBareNum=$('d-barenum');
+const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl'),dNLP=$('d-nlprelude'),dNLTol=$('d-nltolerance'),dNLT=$('d-nltriggers'),dBareNum=$('d-barenum'),dMoreInfoLinks=$('d-moreinfolinks');
 const isHint=s=>{if(!dH.checked)return false;const low=s.toLowerCase();const list=(dHT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
 const isPic=s=>{if(!dP.checked)return false;const low=s.toLowerCase();const list=(dPT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
 const isImgU=b=>dU.checked&&b;
@@ -778,6 +831,71 @@ function run(){
       }
     }
 
+    // "More Info: ชื่อ1 , ชื่อ2" + บรรทัด "(Tag IG: url)"/"(Tag FB: url)" ที่ตามมา → ฝังลิงก์อัตโนมัติ
+    const moreInfoMatch=dMoreInfoLinks.checked?plain.match(/^More\s+Info\s*:\s*(.+)$/i):null;
+    if(moreInfoMatch){
+      // ดึงค่าจากบรรทัดต้นฉบับ (ln, ยังไม่ตัด ** ออก) เพื่อคงตัวหนาที่อาจติดมากับลิงก์จาก rich paste ไว้
+      const lnValueMatch=ln.match(/^\*{0,2}More\s+Info\s*:\*{0,2}\s*(.+)$/i);
+      const namesRaw=(lnValueMatch?lnValueMatch[1]:moreInfoMatch[1]).trim();
+      // เก็บ URL จากบรรทัด "(Tag XX: url)" ที่ตามมา รองรับทั้งแบบ URL เปล่าๆ และแบบที่ห่อด้วย markdown-link
+      // (เพราะถ้า rich paste จาก Doc ที่ URL ใน Tag line ก็ถูกทำเป็นลิงก์ไว้ด้วย จะกลายเป็น [url](url))
+      const tagUrls=[];
+      let j=i+1;
+      while(j<normalizedLines.length){
+        const nxt=normalizedLines[j].trim();
+        if(nxt===''){j++;continue}
+        const tagMatch=nxt.match(/^\(\s*Tag\s+\w+\s*:\s*(?:\[[^\]]*\]\()?\s*(https?:\/\/\S+?)[)\]]*\)?$/i);
+        if(tagMatch){tagUrls.push(tagMatch[1].replace(/[)\]]+$/,''));j++;continue}
+        break;
+      }
+
+      // ถ้า rich paste ฝังลิงก์จริงมาให้แล้ว (มี [ข้อความ](url) อยู่ในค่าที่ดึงมา) — ไม่ต้องเดา ใช้ตามที่มีเลย
+      // แค่เก็บกวาดบรรทัด (Tag...) ที่เหลือทิ้ง (เป็นข้อมูลสำรองที่ไม่จำเป็นแล้ว)
+      const alreadyHasRealLink=/\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(namesRaw);
+      if(alreadyHasRealLink){
+        bodyLines.push(`**More Info:** ${namesRaw}`);
+        logs.push(`  🔗 MoreInfo(L${i}): มีลิงก์ฝังมาแล้วจาก rich paste — ใช้ตามเดิม, ตัดบรรทัด (Tag...) ที่เหลือทิ้ง ${tagUrls.length} เส้น`);
+        i=j-1;
+        lastE=false;
+        continue;
+      }
+
+      // แยกชื่อตาม , หรือ / (เก็บตัวคั่นเดิมไว้)
+      const nameParts=namesRaw.split(/(\s*[,\/]\s*)/).filter(x=>x!=='');
+      const actualNames=nameParts.filter(p=>!/^\s*[,\/]\s*$/.test(p)&&p.trim());
+      const usedUrlIdx=new Set();
+      const outParts=[];
+      for(const part of nameParts){
+        if(/^\s*[,\/]\s*$/.test(part)){outParts.push(part);continue} // ตัวคั่น เก็บตามเดิม
+        const name=part.trim();
+        if(!name){continue}
+        let matchedUrl=null;
+        for(let k=0;k<tagUrls.length;k++){
+          if(usedUrlIdx.has(k))continue;
+          if(namesLikelyMatch(name,tagUrls[k])){matchedUrl=tagUrls[k];usedUrlIdx.add(k);break}
+        }
+        // ถ้ามีแค่ชื่อเดียวและยังไม่ match แต่มี URL เหลืออยู่ → ไม่มีความกำกวม ใช้ URL แรกที่ยังไม่ถูกใช้ไปเลย
+        // (เช่น "Stupid Stay Bangkok" vs handle "stupidstaystupid" — คนละคำ แต่เป็นแบรนด์เดียวกัน เทียบข้อความไม่เจอ)
+        if(!matchedUrl&&actualNames.length===1){
+          for(let k=0;k<tagUrls.length;k++){
+            if(!usedUrlIdx.has(k)){matchedUrl=tagUrls[k];usedUrlIdx.add(k);break}
+          }
+          if(matchedUrl)logs.push(`  🔗 MoreInfo(L${i}): "${name}" → ${matchedUrl} (จับคู่แบบไม่กำกวม มีชื่อเดียว)`);
+        }
+        if(matchedUrl){
+          outParts.push(`[**${name}**](${matchedUrl})`);
+          logs.push(`  🔗 MoreInfo(L${i}): "${name}" → ${matchedUrl}`);
+        }else{
+          outParts.push(`**${name}**`);
+          logs.push(`  ⚠️ MoreInfo(L${i}): "${name}" → ไม่พบลิงก์ที่ตรงกัน (เก็บเป็นตัวหนาเฉยๆ)`);
+        }
+      }
+      bodyLines.push(`**More Info:** ${outParts.join('')}`);
+      i=j-1; // ข้ามบรรทัด Tag ที่ใช้ไปแล้วทั้งหมด (for-loop จะ i++ ต่อเองในรอบถัดไป)
+      lastE=false;
+      continue;
+    }
+
     // === Image Detection ก่อน Art Brief เสมอ ===
     let iH=isHint(plain),iP=isPic(ln),iR=isUrlC&&isRef(plain),iU=!iR&&isImgU(isUrlC),iF=isFn(plain);
     if(iH||iP||iU||iF){
@@ -919,7 +1037,7 @@ ${items}
           wp[pendingRefLabelIdx]=wp[pendingRefLabelIdx].replace('font-weight: 400;','font-weight: 400; color: #999999;');
         }
       }else{
-        const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
+        const items=bulletBuf.map(t=>`  <li>${convertInlineFormatting(t)}</li>`).join('\n');
         wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
       }
       bulletBuf=[];
@@ -940,7 +1058,7 @@ ${items}
       if(hm){
         if(!removedH2.has(origIdx)){
           hIdx++;
-          wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}">${hm[1]}</h2>`,'&nbsp;');
+          wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}"><b>${hm[1]}</b></h2>`,'&nbsp;');
         }
         origIdx++;fpDone=true;continue;
       }
@@ -948,7 +1066,7 @@ ${items}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
       const spanIdx=wp.length;
-      wp.push(`<span style="font-weight: 400;">${convertInlineBold(l)}</span>`,'&nbsp;');fpDone=true;
+      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`,'&nbsp;');fpDone=true;
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets(); // ปิด <ul> ค้างท้ายสุด (ถ้ามี)
@@ -1014,14 +1132,16 @@ function renderPreview(){
     const hm=l.match(/^## \*\*(.+)\*\*$/);
     if(hm){
       if(!removedH2.has(origIdx)){
-        html+=`<div class="p-h2" style="border-left:12px solid ${col}">${esc(hm[1])}</div>`;
+        html+=`<div class="p-h2" style="border-left:12px solid ${col}">${convertInlineFormatting(esc(hm[1]))}</div>`;
       }
       origIdx++;fpDone=true;continue;
     }
     if(l==='.img1'){html+=`<div class="p-img">📷 ตำแหน่งรูปภาพ</div>`;continue}
     const pl=l.replace(/\*/g,'').trim();
     if(pl.startsWith('http://')||pl.startsWith('https://')){html+=`<div class="p-ref">🔗 ${esc(pl)}</div>`;fpDone=true;continue}
-    html+=`<div class="p-para">${esc(l)}</div>`;fpDone=true;
+    const bulletMatch=l.match(/^•\s*(.+)$/);
+    if(bulletMatch){html+=`<div class="p-para">• ${convertInlineFormatting(esc(bulletMatch[1]))}</div>`;fpDone=true;continue}
+    html+=`<div class="p-para">${convertInlineFormatting(esc(l))}</div>`;fpDone=true;
   }
   pv.innerHTML=html||'<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div></div>';
 }
@@ -1066,7 +1186,7 @@ function rebuildOutputs(){
           wp[pendingRefLabelIdx]=wp[pendingRefLabelIdx].replace('font-weight: 400;','font-weight: 400; color: #999999;');
         }
       }else{
-        const items=bulletBuf.map(t=>`  <li>${convertInlineBold(t)}</li>`).join('\n');
+        const items=bulletBuf.map(t=>`  <li>${convertInlineFormatting(t)}</li>`).join('\n');
         wp.push(`<ul style="margin:0 0 1em;padding-left:22px;">\n${items}\n</ul>`);
       }
       bulletBuf=[];
@@ -1080,14 +1200,14 @@ function rebuildOutputs(){
       if(!tocIn&&fpDone&&activeH2.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
       const hm=l.match(/^## \*\*(.+)\*\*$/);
       if(hm){
-        if(!removedH2.has(origIdx)){hIdx++;wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}">${hm[1]}</h2>`,'&nbsp;')}
+        if(!removedH2.has(origIdx)){hIdx++;wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}"><b>${hm[1]}</b></h2>`,'&nbsp;')}
         origIdx++;fpDone=true;continue;
       }
       if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
       const spanIdx=wp.length;
-      wp.push(`<span style="font-weight: 400;">${convertInlineBold(l)}</span>`,'&nbsp;');fpDone=true;
+      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`,'&nbsp;');fpDone=true;
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets();
@@ -1243,7 +1363,7 @@ $('txt-raw').addEventListener('paste',(e)=>{
   showToast('✨ วางจาก Google Docs แล้ว — จับ Heading/ตัวหนาให้อัตโนมัติ');
 });
 [$('inp-cat'),$('inp-pfx'),$('inp-author'),$('inp-toc')].forEach(el=>{el.addEventListener('input',saveS);el.addEventListener('change',saveS)});
-[$('d-hint'),$('d-pic'),$('d-url'),$('d-file'),$('d-dedup'),$('d-artbrief'),$('d-artlines'),$('d-dropcapurl'),$('d-barenum')].forEach(el=>el.addEventListener('change',saveS));
+[$('d-hint'),$('d-pic'),$('d-url'),$('d-file'),$('d-dedup'),$('d-artbrief'),$('d-artlines'),$('d-dropcapurl'),$('d-barenum'),$('d-moreinfolinks')].forEach(el=>el.addEventListener('change',saveS));
 $('d-artlines').addEventListener('input',saveS);
 $('d-arttriggers').addEventListener('input',saveS);
 $('d-shlabels').addEventListener('input',saveS);
@@ -1278,6 +1398,7 @@ $('btn-reset-imgsettings').addEventListener('click',()=>{
   dPT.value="รูปที่";
   dDropCapUrl.checked=true;
   dBareNum.checked=true;
+  dMoreInfoLinks.checked=true;
   dNLP.checked=true;dNLTol.value=1;
   dNLT.value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:";
   saveS();

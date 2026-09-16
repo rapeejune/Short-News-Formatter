@@ -283,13 +283,13 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
       <label class="cki"><input type="checkbox" id="d-artbrief" checked>
         <div>
           <div class="n">ข้าม Art Brief (เท็กลงภาพ / Text in pic)</div>
-          <div class="d" style="font-size:10px;color:#aeaeb2">ข้ามบรรทัดบรีฟที่เป็นตัวพิมพ์ใหญ่ล้วน จนกว่าจะเจอประโยคปกติ (มีตัวเล็กปน)</div>
+          <div class="d" style="font-size:10px;color:#aeaeb2">ข้ามตามจำนวนบรรทัดที่กำหนด ไม่สนใจภาษา/ตัวพิมพ์ใหญ่-เล็ก (รองรับทั้งบรีฟภาษาไทยและอังกฤษ)</div>
         </div>
       </label>
       <div style="display:flex;align-items:center;gap:8px;margin-top:4px;padding-left:28px">
-        <label style="font-size:11px;color:#6e6e73;white-space:nowrap">Safety cap:</label>
-        <input type="number" id="d-artlines" value="15" min="1" max="50" style="width:50px;font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:3px 6px;outline:none;font-family:inherit">
-        <span style="font-size:10px;color:#aeaeb2">บรรทัด — กันหลุดถ้าไม่มีบรรทัดว่างเลย</span>
+        <label style="font-size:11px;color:#6e6e73;white-space:nowrap">ข้ามกี่บรรทัด:</label>
+        <input type="number" id="d-artlines" value="2" min="1" max="20" style="width:50px;font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:3px 6px;outline:none;font-family:inherit">
+        <span style="font-size:10px;color:#aeaeb2">บรรทัด (ไม่นับบรรทัดว่าง) — ปกติบรีฟมี 2 บรรทัด: ชื่อปก + วันที่/สถานที่</span>
       </div>
       <div style="margin-top:6px;padding-left:28px;display:flex;flex-direction:column;gap:4px">
         <label style="font-size:11px;color:#6e6e73">คำ trigger (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
@@ -512,7 +512,7 @@ const CI_C={NEWS:'#e62227',POP:'#0000ff',WEALTH:'#c19380',LIFE:'#000000',SPORT:'
 
 // Storage
 const mem={};const sG=k=>{try{return localStorage.getItem(k)}catch{return mem[k]||null}};const sS=(k,v)=>{try{localStorage.setItem(k,v)}catch{mem[k]=v}};
-function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||15;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false;dNLP.checked=o.nlp!==false;dNLTol.value=o.nltol!==undefined?o.nltol:1;if(o.nlt)dNLT.value=o.nlt;dBareNum.checked=o.bn!==false}
+function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||2;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false;dNLP.checked=o.nlp!==false;dNLTol.value=o.nltol!==undefined?o.nltol:1;if(o.nlt)dNLT.value=o.nlt;dBareNum.checked=o.bn!==false}
 function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||15,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked,nlp:dNLP.checked,nltol:parseInt(dNLTol.value),nlt:dNLT.value,bn:dBareNum.checked}));run()}
 
 // Tabs
@@ -662,7 +662,7 @@ function run(){
   // Art brief skip state
   let abSkipping=false,abRemain=0;
   const abEnabled=dAB.checked;
-  const abCap=parseInt(dAL.value)||15; // safety cap เท่านั้น — หยุดจริงเมื่อเจอบรรทัดว่าง
+  const abCap=parseInt(dAL.value)||2; // จำนวนบรรทัด (ไม่นับบรรทัดว่าง) ที่ข้ามหลัง trigger เสมอ
   // Build trigger list from input field
   const abTriggers=($('d-arttriggers').value||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const isArtBrief=(s)=>{
@@ -677,15 +677,6 @@ function run(){
     if(!shTriggers.length)return false;
     const low=inner.trim().toLowerCase();
     return shTriggers.some(t=>t&&low.startsWith(t));
-  };
-
-  // เช็คว่าเป็น "บรรทัดบรีฟ" หรือไม่ — ตัวพิมพ์ใหญ่ล้วน (ไม่มีตัวเล็กปนเลย)
-  // เช่น "HOUSE OF FILMS: SOMEWHERE TO BELONG", "21-23 AUG / THE CORNER HOUSE BANGKOK"
-  // ถ้าเจอตัวพิมพ์เล็กแม้แค่ตัวเดียว (ประโยคปกติ) ถือว่าจบกลุ่มบรีฟทันที
-  const isBriefLine=(s)=>{
-    const hasUpper=/[A-Z]/.test(s);
-    const hasLower=/[a-z]/.test(s);
-    return hasUpper&&!hasLower;
   };
 
   const flush=()=>{
@@ -717,23 +708,17 @@ function run(){
     }
 
 
-    // Art brief: ข้ามบรรทัดว่าง + บรรทัดตัวพิมพ์ใหญ่ล้วน จนกว่าจะเจอประโยคปกติ (มีตัวเล็กปน)
+    // Art brief: ข้ามบรรทัดว่างเสมอ + ข้ามบรรทัดเนื้อหาตามจำนวนที่กำหนด (ไม่สนใจภาษา/ตัวพิมพ์ใหญ่-เล็ก)
+    // เพราะบรีฟบางงานเขียนเป็นภาษาไทยล้วน (ไม่มีตัวพิมพ์ใหญ่ให้เช็ค) จึงใช้การนับจำนวนบรรทัดแทน
     if(abSkipping){
-      if(ln===''){continue} // กลืนบรรทัดว่างระหว่างบรีฟ ไม่หยุด
-      const plainCheck=ln.replace(/\*/g,'').trim();
-      if(isBriefLine(plainCheck)){
-        abRemain--;
-        logs.push(`  🎨 ArtBrief skip(L${i}): "${ln.substring(0,40)}" [cap ${abRemain} เหลือ]`);
-        if(abRemain<=0){
-          abSkipping=false;
-          logs.push(`  ⚠️ ArtBrief safety cap reached(L${i})`);
-        }
-        continue;
-      }else{
+      if(ln===''){continue} // กลืนบรรทัดว่างระหว่างบรีฟ ไม่หยุด ไม่นับ
+      abRemain--;
+      logs.push(`  🎨 ArtBrief skip(L${i}): "${ln.substring(0,40)}" [เหลืออีก ${abRemain} บรรทัด]`);
+      if(abRemain<=0){
         abSkipping=false;
-        logs.push(`  🎨 ArtBrief end(L${i}): พบประโยคปกติ — กลับสู่เนื้อหา`);
-        // ไม่ continue — ให้บรรทัดนี้ถูกประมวลผลตามปกติต่อไป
+        logs.push(`  🎨 ArtBrief end(L${i}): ครบจำนวนบรรทัดที่ตั้งไว้ — กลับสู่เนื้อหา`);
       }
+      continue;
     }
 
 
@@ -1286,7 +1271,7 @@ updateTopCopyBtn();
 $('btn-reset-imgsettings').addEventListener('click',()=>{
   if(!confirm('รีเซ็ตค่าตั้งค่าตรวจจับภาพ + Art Brief กลับเป็นค่าเริ่มต้นทั้งหมด?'))return;
   dH.checked=true;dP.checked=true;dU.checked=true;dF.checked=true;dD.checked=true;
-  dAB.checked=true;dAL.value=15;
+  dAB.checked=true;dAL.value=2;
   dAT.value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ,ตัดคำว่า";
   dSH.value="Time:,When:,Where:,Admission:,Booking:,More Info:,Note:,Price:,Location:,Address:,Contact:,Hours:,Date:,Duration:,Fee:,Cost:,RSVP:,Tel:,Phone:,Email:,Website:,Schedule:,Program:,Map:,ตารางรอบฉาย,วันจันทร์,วันอังคาร,วันพุธ,วันพฤหัสบดี,วันศุกร์,วันเสาร์,วันอาทิตย์,ภาพ:,อ้างอิง:,ที่มา:,แหล่งที่มา:,เรียบเรียงจาก:,ขอบคุณข้อมูลจาก:,Source:,Reference:";
   dHT.value="แทรกภาพ,แทรกรูป,แทรก pic,(วางรูป,(แทรกรูป,(วางภาพ";

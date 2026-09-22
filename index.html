@@ -1037,7 +1037,7 @@ ${items}
   </ul>
 </div>`;
   }
-  // Build full WP HTML (only active H2)
+  // Build full WP HTML (only active H2) — ไม่มี &nbsp; separator
   if(bodyLines.length){
     const wp=[];let fpDone=false,tocIn=false,hIdx=0,origIdx=0;
     let bulletBuf=[]; // บัฟเฟอร์เก็บบรรทัด bullet ติดกัน เพื่อรวมเป็น <ul><li> เดียว
@@ -1074,18 +1074,18 @@ ${items}
         continue;
       }
       flushBullets(); // เจอบรรทัดที่ไม่ใช่ bullet → ปิด <ul> ที่ค้างอยู่ก่อน
-      if(!tocIn&&fpDone&&activeH2.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
+      if(!tocIn&&fpDone&&activeH2.length){wp.push(tocBlock);tocIn=true}
       const hm=l.match(/^## \*\*(.+)\*\*$/);
       if(hm){
         if(!removedH2.has(origIdx)){
           hIdx++;
-          wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}"><b>${hm[1]}</b></h2>`,'&nbsp;');
+          wp.push(`<h2 id="section${hIdx}" style="${st}"><b>${hm[1]}</b></h2>`);
         }
         origIdx++;fpDone=true;continue;
       }
-      if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
+      if(l==='.img1'){wp.push('<!-- .img1 — แทรกรูปภาพที่นี่ -->');continue}
       const pl=l.replace(/\*/g,'').trim();
-      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
+      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`);fpDone=true;continue}
       const spanIdx=wp.length;
       wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`,'&nbsp;');fpDone=true;
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
@@ -1218,17 +1218,17 @@ function rebuildOutputs(){
       const bulletMatch=l.match(/^•\s*(.+)$/);
       if(bulletMatch){bulletBuf.push(bulletMatch[1]);fpDone=true;continue}
       flushBullets();
-      if(!tocIn&&fpDone&&activeH2.length){wp.push('&nbsp;',tocBlock,'&nbsp;');tocIn=true}
+      if(!tocIn&&fpDone&&activeH2.length){wp.push(tocBlock);tocIn=true}
       const hm=l.match(/^## \*\*(.+)\*\*$/);
       if(hm){
-        if(!removedH2.has(origIdx)){hIdx++;wp.push('&nbsp;',`<h2 id="section${hIdx}" style="${st}"><b>${hm[1]}</b></h2>`,'&nbsp;')}
+        if(!removedH2.has(origIdx)){hIdx++;wp.push(`<h2 id="section${hIdx}" style="${st}"><b>${hm[1]}</b></h2>`)}
         origIdx++;fpDone=true;continue;
       }
-      if(l==='.img1'){wp.push('&nbsp;','<!-- .img1 — แทรกรูปภาพที่นี่ -->','&nbsp;');continue}
+      if(l==='.img1'){wp.push('<!-- .img1 — แทรกรูปภาพที่นี่ -->');continue}
       const pl=l.replace(/\*/g,'').trim();
-      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`,'&nbsp;');fpDone=true;continue}
+      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`);fpDone=true;continue}
       const spanIdx=wp.length;
-      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`,'&nbsp;');fpDone=true;
+      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`);fpDone=true;
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets();

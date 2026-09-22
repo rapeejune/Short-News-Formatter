@@ -654,8 +654,8 @@ function run(){
       if(/<\/div>/.test(t)&&!/<div/.test(t)){continue}
       if(/<ul[\s>]/.test(t)||/<\/ul>/.test(t)){continue}
       if(/<li[\s>]/.test(t)){continue}
-      // Other HTML tags → strip tags
-      const stripped=t.replace(/<[^>]+>/g,'').trim();
+      // Other HTML tags → strip tags และลบ &nbsp; ทั้ง entity และ Unicode character
+      const stripped=t.replace(/<[^>]+>/g,'').trim().replace(/&nbsp;/g,' ').replace(/\u00A0/g,' ');
       if(stripped)normalizedLines.push(stripped);
     }
   }
@@ -1087,13 +1087,12 @@ ${items}
       const pl=l.replace(/\*/g,'').trim();
       if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`);fpDone=true;continue}
       const spanIdx=wp.length;
-      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`,'&nbsp;');fpDone=true;
+      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`);fpDone=true;
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
-    flushBullets(); // ปิด <ul> ค้างท้ายสุด (ถ้ามี)
-    if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
-    const cl=[];for(const b of wp){if(b==='&nbsp;'&&cl.length>0&&cl[cl.length-1]==='&nbsp;')continue;cl.push(b)}
-    outputs.wphtml=cl.join('\n');
+    flushBullets();
+    if(!tocIn&&activeH2.length&&tocBlock){wp.unshift(tocBlock)}
+    outputs.wphtml=wp.join('\n');
   }else{outputs.wphtml=''}
 
   parsed={headline,author,photographer,bodyLines,headings,totalImgs};
@@ -1232,9 +1231,8 @@ function rebuildOutputs(){
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets();
-    if(!tocIn&&activeH2.length&&tocBlock){const idx=wp.findIndex(b=>b!=='&nbsp;'&&!b.startsWith('<!--'));if(idx>-1)wp.splice(idx+1,0,'&nbsp;',tocBlock,'&nbsp;');else wp.unshift(tocBlock,'&nbsp;')}
-    const cl=[];for(const b of wp){if(b==='&nbsp;'&&cl.length>0&&cl[cl.length-1]==='&nbsp;')continue;cl.push(b)}
-    outputs.wphtml=cl.join('\n');
+    if(!tocIn&&activeH2.length&&tocBlock){wp.unshift(tocBlock)}
+    outputs.wphtml=wp.join('\n');
   }
 
   $('st-h2').textContent='H2: '+activeH2.length+'/'+headings.length;

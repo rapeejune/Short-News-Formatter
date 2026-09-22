@@ -552,6 +552,7 @@ let mode='full',ciCat='NEWS',activeTab='raw';
 let outputs={formatted:'',wphtml:''};
 let parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};
 let removedH2=new Set();
+let userChangedCi=false; // ตั้งค่าเมื่อผู้ใช้กดปุ่ม CI ด้วยตนเอง — ป้องกันไม่ให้ detect จาก HTML overwrite
 
 const CI_S={
   NEWS:'border-left:12px solid #e62227;padding-left:15px;background-color:#F8F8F8;padding:10px;',
@@ -573,6 +574,7 @@ $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-con
 $('mt-content').onclick=()=>{mode='content';$('mt-content').className='mtab on';$('mt-full').className='mtab';$('sbar').className='sbar hide';run()};
 document.querySelector('.otabs-left').addEventListener('click',e=>{const t=e.target.closest('.otab');if(!t)return;activeTab=t.dataset.t;document.querySelectorAll('.otab').forEach(x=>x.classList.toggle('on',x.dataset.t===activeTab));document.querySelectorAll('.opanel').forEach(p=>p.classList.remove('show'));$('pn-'+activeTab).classList.add('show');updateTopCopyBtn()});
 document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
+  userChangedCi=true; // ผู้ใช้กดเปลี่ยน CI ด้วยตนเอง — อย่าให้ detect จาก HTML overwrite
   const prev=ciCat;
   document.querySelectorAll('.ci-d').forEach(x=>x.classList.remove('on'));d.classList.add('on');ciCat=d.dataset.ci;
   run();
@@ -611,6 +613,25 @@ function run(){
   let normalizedLines=lines;
   if(isHtmlInput){
     logs.push('📄 ตรวจพบ HTML input — normalize กลับเป็น plain text');
+
+    // === ดึง CI สีจาก HTML input (border-left ใน H2) เพื่อตั้งค่าให้อัตโนมัติ ===
+    if(!userChangedCi){
+    const ciColorMatch=lines.join('\n').match(/border-left:\s*\d+px\s+solid\s+(#[0-9a-fA-F]{3,6})/);
+    if(ciColorMatch){
+      const htmlColor=ciColorMatch[1].toLowerCase();
+      const colorToCi={
+        '#e62227':'NEWS','#0000ff':'POP','#c19380':'WEALTH',
+        '#000000':'LIFE','#ffa5f7':'SPORT','#ffcd00':'TSS'
+      };
+      const detectedCi=colorToCi[htmlColor];
+      if(detectedCi&&detectedCi!==ciCat){
+        ciCat=detectedCi;
+        document.querySelectorAll('.ci-d').forEach(x=>x.classList.toggle('on',x.dataset.ci===detectedCi));
+        logs.push(`🎨 ตรวจพบ CI สี ${htmlColor} จาก HTML → เปลี่ยนเป็น ${detectedCi}`);
+      }
+    }
+    }
+
     normalizedLines=[];
     for(const line of lines){
       const t=line.trim();
@@ -1349,6 +1370,7 @@ $('txt-raw').addEventListener('input',()=>{
   },400);
 });
 $('txt-raw').addEventListener('paste',(e)=>{
+  userChangedCi=false; // รีเซ็ตเมื่อผู้ใช้วาง HTML ใหม่ — ให้ detect CI จาก HTML ได้อีกครั้ง
   const html=(e.clipboardData||window.clipboardData).getData('text/html');
   if(!html||!html.trim())return; // ไม่มี HTML (เช่น copy จาก plain text) → ปล่อยให้ paste ปกติ
   const converted=htmlPasteToMarkedText(html, mode==='content');

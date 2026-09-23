@@ -1110,9 +1110,9 @@ ${items}
       }
       if(l==='.img1'){wp.push('<!-- .img1 — แทรกรูปภาพที่นี่ -->');continue}
       const pl=l.replace(/\*/g,'').trim();
-      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`);fpDone=true;continue}
+      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer" style="display:block; margin-bottom: 0.5em;">${pl}</a>`);fpDone=true;continue}
       const spanIdx=wp.length;
-      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`);fpDone=true;
+      wp.push(`<span style="font-weight: 400; display:block; margin-bottom: 0.5em;">${convertInlineFormatting(l)}</span>`);fpDone=true;
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets();
@@ -1250,9 +1250,9 @@ function rebuildOutputs(){
       }
       if(l==='.img1'){wp.push('<!-- .img1 — แทรกรูปภาพที่นี่ -->');continue}
       const pl=l.replace(/\*/g,'').trim();
-      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer">${pl}</a>`);fpDone=true;continue}
+      if(pl.startsWith('http://')||pl.startsWith('https://')){wp.push(`<a href="${pl}" target="_blank" rel="noopener noreferrer" style="display:block; margin-bottom: 0.5em;">${pl}</a>`);fpDone=true;continue}
       const spanIdx=wp.length;
-      wp.push(`<span style="font-weight: 400;">${convertInlineFormatting(l)}</span>`);fpDone=true;
+      wp.push(`<span style="font-weight: 400; display:block; margin-bottom: 0.5em;">${convertInlineFormatting(l)}</span>`);fpDone=true;
       pendingRefLabelIdx=isRefLabelLine(l)?spanIdx:-1;
     }
     flushBullets();

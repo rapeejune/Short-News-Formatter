@@ -13,31 +13,29 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --bg:#f4f5f7;
-  --surface:#fff;
-  --surface-hover:#f8f9fb;
-  --border:rgba(0,0,0,.07);
-  --border-light:rgba(0,0,0,.04);
-  --text:#1d1d1f;
-  --text-secondary:#6e6e73;
-  --text-tertiary:#aeaeb2;
-  --accent:#0071e3;
-  --accent-bg:rgba(0,113,227,.06);
-  --danger:#e62227;
-  --danger-bg:rgba(230,34,39,.06);
+  --bg:#f3f4f6;
+  --surface:#ffffff;
+  --surface-hover:#f9fafb;
+  --border:rgba(0,0,0,.08);
+  --border-light:rgba(0,0,0,.06);
+  --text:#1f2937;
+  --text-secondary:#6b7280;
+  --text-tertiary:#9ca3af;
+  --accent:#2563eb;
+  --accent-bg:rgba(37,99,235,.06);
+  --danger:#dc2626;
+  --danger-bg:rgba(220,38,38,.06);
   --warning:#d97706;
   --warning-bg:rgba(217,119,6,.1);
-  --success:#34c759;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
-  --shadow-md:0 4px 16px rgba(0,0,0,.08);
-  --shadow-lg:0 10px 30px rgba(0,0,0,.12);
-  --radius-sm:8px;
-  --radius-md:12px;
-  --radius-lg:16px;
-  --radius-xl:20px;
-  --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  --font-mono:'SF Mono','Fira Code',Consolas,monospace;
-  --transition:0.2s cubic-bezier(.4,0,.2,1);
+  --success:#16a34a;
+  --shadow:none;
+  --radius:8px;
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:14px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"SF Mono","Fira Code",Consolas,monospace;
+  --transition:0.15s ease;
 }
 
 body{
@@ -998,6 +996,134 @@ body.dark .dbg pre{background:#2d2d30;color:#8a8a8d;border-color:rgba(255,255,25
   line-height:1.4;
   margin-left:20px;
 }
+
+/* --- Settings Grid (3-column) --- */
+.settings-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-top:8px;
+}
+@media (max-width:900px){
+  .settings-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:600px){
+  .settings-grid{grid-template-columns:1fr}
+}
+
+.g-item{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:14px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.g-title{
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-secondary);
+  text-transform:uppercase;
+  letter-spacing:.3px;
+  margin-bottom:2px;
+}
+
+/* grid ใน g-item ใช้ column ที่ 2-3 */
+.g-item .ckg{
+  display:flex;
+  gap:6px;
+  margin-top:0;
+}
+
+/* trigger input ใน grid ใช้แบบ full-width */
+.g-item .trigger-input{
+  width:100%;
+  margin-top:2px;
+}
+
+.g-item .setting-row{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  margin-top:0;
+}
+.g-item .setting-row .det-label{
+  font-size:11px;
+  font-weight:500;
+  color:var(--text-secondary);
+  margin-bottom:0;
+}
+.g-item .num-input.s{
+  width:80px;
+  align-self:flex-start;
+}
+.g-item .trigger-input.s{
+  width:auto;
+  flex:1;
+  min-width:0;
+}
+
+.g-item .warn-msg{
+  font-size:10px;
+  color:var(--danger);
+  margin-top:2px;
+  line-height:1.4;
+}
+.g-item .hint-msg{
+  font-size:10px;
+  color:var(--text-tertiary);
+  line-height:1.4;
+  margin-top:0;
+}
+.g-item .hint-msg.s{
+  margin-top:2px;
+}
+
+/* checkbox ใน grid */
+.g-item .cki{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:5px 7px;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  transition:background var(--transition);
+  font-size:13px;
+}
+.g-item .cki:hover{
+  background:var(--surface-hover);
+}
+.g-item .cki input[type="checkbox"]{
+  width:15px;
+  height:15px;
+  accent-color:var(--accent);
+  cursor:pointer;
+}
+
+/* --- btn-reset --- */
+.btn-reset{
+  font-size:12px;
+  color:var(--danger);
+  background:var(--danger-bg);
+  border:1px solid rgba(220,38,38,.2);
+  border-radius:var(--radius-sm);
+  padding:5px 10px;
+  cursor:pointer;
+  white-space:nowrap;
+  font-family:inherit;
+  transition:all var(--transition);
+  align-self:flex-start;
+}
+.btn-reset:hover{
+  background:rgba(220,38,38,.12);
+  border-color:var(--danger);
+}
+
+/* --- pb padding --- */
+.pb{
+  padding:4px 0;
+}
 </style>
 </head>
 <body>
@@ -1056,114 +1182,104 @@ body.dark .dbg pre{background:#2d2d30;color:#8a8a8d;border-color:rgba(255,255,25
 </div>
 
 <details class="pnl">
-  <summary>🖼️ ตั้งค่าตรวจจับภาพ + Art Brief</summary>
+  <summary>🖼️ ตั้งค่าตรวจจับภาพ</summary>
   <div class="pb">
-    <div class="settings-header">
-      <p class="ht">พิมพ์คำ/สัญลักษณ์ที่นักเขียนใช้บอกตำแหน่งภาพเอง — เพิ่มคำใหม่ได้ตลอดถ้าเจอรูปแบบที่ระบบยังไม่รู้จัก</p>
-      <button type="button" id="btn-reset-imgsettings" class="btn-reset">↺ รีเซ็ตค่าเริ่มต้น</button>
-    </div>
-    <p class="warning-msg">⚠️ ถ้ารูปหาย/เกิน ก่อนอื่นเช็คว่า checkbox ด้านล่างถูกปิดไว้โดยไม่ตั้งใจหรือเปล่า (ค่าที่ติ๊กจะถูกจำไว้ในเบราว์เซอร์ทุกครั้ง) — กด "รีเซ็ตค่าเริ่มต้น" ได้ถ้าไม่แน่ใจ</p>
+    <div class="settings-grid">
 
-    <!-- Section 1: กลุ่มที่ 1 - คำบอกตำแหน่งภาพ -->
-    <div class="settings-section">
-      <div class="settings-section-header">กลุ่มที่ 1 — คำบอกตำแหน่งภาพ</div>
-      <label class="cki"><input type="checkbox" id="d-hint" checked><div class="n">เปิดใช้งานคำบอกตำแหน่งภาพ</div></label>
-      <input type="text" id="d-hinttriggers" class="trigger-input" value="แทรกภาพ,แทรกรูป,แทรก pic,(วางรูป,(แทรกรูป,(วางภาพ">
-      <p class="hint-msg">จับแบบ "มีคำนี้อยู่ในบรรทัด" (ไม่ต้องขึ้นต้นพอดี) — เช่น "แทรก pic ตรงนี้" ก็จับได้</p>
-    </div>
-
-    <!-- Section 2: กลุ่มที่ 2 - มาร์กเกอร์รูปภาพ -->
-    <div class="settings-section">
-      <div class="settings-section-header">กลุ่มที่ 2 — มาร์กเกอร์รูปภาพ (เช่น [รูปที่ N])</div>
-      <label class="cki"><input type="checkbox" id="d-pic" checked><div class="n">เปิดใช้งานมาร์กเกอร์รูปภาพ</div></label>
-      <input type="text" id="d-pictriggers" class="trigger-input" value="รูปที่">
-      <p class="hint-msg">ใช้แยกจากกลุ่มที่ 1 เพราะนับจำนวนแยกกัน — ถ้ามีมาร์กเกอร์เลข 3 อัน = 3 ภาพ</p>
-      <p class="warn-msg">⚠️ ห้ามใส่ "ภาพที่" เพราะจะไปชนกับคำว่า "สุขภาพที่..." ทำให้ประโยคหายไป — และระวังคำสั้นๆ ภาษาอังกฤษ เช่น "pic" (จะจับ topic, picture, typical) แนะนำให้ใช้ "แทรก pic" แทน</p>
-    </div>
-
-    <!-- Section 3: URL + ไฟล์ภาพ -->
-    <div class="settings-section">
-      <div class="settings-section-header">ตรวจจับภาพจาก URL + ไฟล์</div>
-      <div class="ckg">
-        <label class="cki"><input type="checkbox" id="d-url" checked><div class="n">ลิงก์ URL</div></label>
-        <label class="cki"><input type="checkbox" id="d-file" checked><div class="n">ชื่อไฟล์ภาพ</div></label>
+      <!-- Grid Item 1 — เปิด/ปิด + Reset -->
+      <div class="g-item">
+        <div class="g-title">ภาพรวม</div>
+        <label class="cki">
+          <input type="checkbox" id="d-imgdetect" checked>
+          <div class="n">เปิดใช้งานการตรวจจับภาพทั้งหมด</div>
+        </label>
+        <button type="button" id="btn-reset-imgsettings" class="btn-reset">↺ รีเซ็ตค่าเริ่มต้น</button>
+        <p class="warn-msg">⚠️ ถ้ารูปหาย/เกิน ก่อนอื่นเช็คว่า checkbox ด้านล่างถูกปิดไว้โดยไม่ตั้งใจหรือเปล่า (ค่าที่ติ๊กจะถูกจำไว้ในเบราว์เซอร์ทุกครั้ง)</p>
       </div>
-      <label class="cki"><input type="checkbox" id="d-barenum" checked>
-        <div>
-          <div class="n">ตัวเลขล้วนบรรทัดเดียว (เช่น 59, 77)</div>
-          <div class="d">นับเป็นชื่อไฟล์ภาพแบบย่อ (ไม่มีนามสกุล .jpg) — ปิดได้ถ้างานไหนมีเลขหน้าเอกสารหลุดมาปน</div>
-        </div>
-      </label>
-      <label class="cki"><input type="checkbox" id="d-dedup" checked><div class="n">ตัด URL ซ้ำ</div></label>
-    </div>
 
-    <!-- Section 4: ตัดลิงก์แหล่งที่มา + More Info -->
-    <div class="settings-section alt">
-      <div class="settings-section-header">ตัดลิงก์แหล่งที่มาซ้ำ + ฝังลิงก์อัตโนมัติ</div>
-      <label class="cki"><input type="checkbox" id="d-dropcapurl" checked>
-        <div>
-          <div class="n">ตัดลิงก์แหล่งที่มาซ้ำหลังคำบรรยายภาพ</div>
-          <div class="d">เช่น [รูปที่ 1] → คำบรรยาย/แหล่งที่มา → ลิงก์ Drive (ลิงก์นี้จะถูกตัดทิ้ง ไม่นับเป็นภาพเพิ่ม)</div>
-        </div>
-      </label>
-      <label class="cki"><input type="checkbox" id="d-moreinfolinks" checked>
-        <div>
-          <div class="n">ฝังลิงก์ให้ "More Info: ชื่อ1 , ชื่อ2" อัตโนมัติ</div>
-          <div class="d">ดึง URL จากบรรทัด "(Tag IG: url)" / "(Tag FB: url)" ที่ตามมา แล้วจับคู่ชื่อกับลิงก์ให้เอง — ตัดบรรทัด Tag ทิ้งหลังใช้แล้ว</div>
-        </div>
-      </label>
-    </div>
+      <!-- Grid Item 2 — คำบอกตำแหน่งภาพ -->
+      <div class="g-item">
+        <div class="g-title">กลุ่มที่ 1 — คำบอกตำแหน่งภาพ</div>
+        <label class="cki"><input type="checkbox" id="d-hint" checked><div class="n">เปิดใช้งาน</div></label>
+        <input type="text" id="d-hinttriggers" class="trigger-input" value="แทรกภาพ,แทรกรูป,แทรก pic,(วางรูป,(แทรกรูป,(วางภาพ" placeholder="แทรกภาพ,แทรกรูป,แทรก pic,...">
+        <p class="hint-msg">จับแบบ "มีคำนี้อยู่ในบรรทัด" (ไม่ต้องขึ้นต้นพอดี) — เช่น "แทรก pic ตรงนี้" ก็จับได้</p>
+      </div>
 
-    <!-- Section 5: Art Brief -->
-    <div class="settings-section alt">
-      <div class="settings-section-header">🎨 Art Brief — ข้ามข้อความบรีฟอาร์ต (เท็กลงภาพ / Text in pic)</div>
-      <label class="cki"><input type="checkbox" id="d-artbrief" checked>
-        <div>
-          <div class="n">ข้าม Art Brief — ไม่นำไปฟอร์แมตเป็นเนื้อข่าว</div>
-          <div class="d">ข้ามตามจำนวนบรรทัดที่กำหนด ไม่สนใจภาษา/ตัวพิมพ์ใหญ่-เล็ก (รองรับทั้งบรีฟภาษาไทยและอังกฤษ)</div>
-        </div>
-      </label>
-      <div class="setting-row">
-        <label style="font-size:12px;color:var(--text-secondary);white-space:nowrap">ข้ามกี่บรรทัด:</label>
-        <input type="number" id="d-artlines" value="2" min="1" max="20" class="num-input">
-        <span class="hint-msg">บรรทัด (ไม่นับบรรทัดว่าง) — ปกติบรีฟมี 2 บรรทัด: ชื่อปก + วันที่/สถานที่</span>
+      <!-- Grid Item 3 — มาร์กเกอร์รูปภาพ -->
+      <div class="g-item">
+        <div class="g-title">กลุ่มที่ 2 — มาร์กเกอร์รูปภาพ</div>
+        <label class="cki"><input type="checkbox" id="d-pic" checked><div class="n">เปิดใช้งาน</div></label>
+        <input type="text" id="d-pictriggers" class="trigger-input" value="รูปที่" placeholder="รูปที่,...">
+        <p class="hint-msg">ใช้แยกจากกลุ่มที่ 1 เพราะนับจำนวนแยกกัน — ถ้ามีมาร์กเกอร์เลข 3 อัน = 3 ภาพ</p>
+        <p class="warn-msg">⚠️ ห้ามใส่ "ภาพที่" (ไปชน "สุขภาพที่...") และระวังคำสั้นๆ เช่น "pic" (จับ topic, picture, typical) — ใช้ "แทรก pic" แทน</p>
       </div>
-      <div class="setting-row" style="flex-direction:column;gap:4px">
-        <label style="font-size:12px;color:var(--text-secondary)">คำ trigger (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
-        <input type="text" id="d-arttriggers" class="trigger-input" value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ,ตัดคำว่า">
-        <p class="warn-msg">⚠️ ห้ามใส่คำที่ใช้แทรกรูป เช่น "แทรกภาพ / แทรกรูป" และ "แคปชั่น / บรรยาย / caption" (เป็นข้อความใต้ภาพ ต้องเก็บ)</p>
-      </div>
-    </div>
 
-    <!-- Section 6: Newsletter Prelude -->
-    <div class="settings-section alt">
-      <div class="settings-section-header">📰 Newsletter Prelude — ตัดโซนเปิดเรื่อง (เท็กซ์ทำปก/บรีฟปก/Highlights)</div>
-      <label class="cki"><input type="checkbox" id="d-nlprelude" checked>
-        <div>
-          <div class="n">ตัดโซนเปิดเรื่อง Newsletter ทิ้งทั้งหมด</div>
-          <div class="d">เจอ label เหล่านี้ → ตัดย่อหน้านั้นทิ้ง แล้วเผื่อข้ามย่อหน้าคั่นได้ตามจำนวนที่ตั้งไว้ ก่อนเจอ label ถัดไป</div>
+      <!-- Grid Item 4 — ตรวจจับรูปภาพ -->
+      <div class="g-item">
+        <div class="g-title">ตรวจจับภาพจาก</div>
+        <div class="ckg">
+          <label class="cki"><input type="checkbox" id="d-url" checked><div class="n">ลิงก์ URL</div></label>
+          <label class="cki"><input type="checkbox" id="d-file" checked><div class="n">ชื่อไฟล์ภาพ</div></label>
+          <label class="cki"><input type="checkbox" id="d-barenum" checked><div class="n">ตัวเลขล้วน (เช่น 59, 77)</div></label>
         </div>
-      </label>
-      <div class="setting-row">
-        <label style="font-size:12px;color:var(--text-secondary);white-space:nowrap">ระยะเผื่อ:</label>
-        <input type="number" id="d-nltolerance" value="1" min="0" max="5" class="num-input">
-        <span class="hint-msg">ย่อหน้า — จำนวนย่อหน้าไม่มี label คั่นได้ก่อนถือว่าจบโซน</span>
+        <p class="hint-msg">ตัวเลขล้วนบรรทัดเดียว นับเป็นชื่อไฟล์ภาพแบบย่อ (ไม่มีนามสกุล .jpg) — ปิดได้ถ้างานไหนมีเลขหน้าเอกสารหลุดมาปน</p>
+        <label class="cki" style="margin-top:4px"><input type="checkbox" id="d-dedup" checked><div class="n">ตัด URL ซ้ำ</div></label>
       </div>
-      <div class="setting-row" style="flex-direction:column;gap:4px">
-        <label style="font-size:12px;color:var(--text-secondary)">คำ label (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
-        <input type="text" id="d-nltriggers" class="trigger-input" value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:">
-        <p class="hint-msg">ใช้กับงานแบบ Newsletter เท่านั้น — ถ้าไม่มี label เหล่านี้ในต้นฉบับ ฟีเจอร์นี้จะไม่ทำงานเลย ไม่กระทบข่าวปกติ</p>
-      </div>
-    </div>
 
-    <!-- Section 7: หัวข้อย่อย -->
-    <div class="settings-section alt">
-      <div class="settings-section-header">📌 หัวข้อย่อย — ไม่ใส่ ## (เช่น วันที่, Label ข้อมูล)</div>
-      <div class="setting-row" style="flex-direction:column;gap:4px">
-        <label style="font-size:12px;color:var(--text-secondary)">คำที่ขึ้นต้นแล้วถือเป็นหัวข้อย่อย (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
-        <input type="text" id="d-shlabels" class="trigger-input" value="Time:,When:,Where:,Admission:,Booking:,More Info:,Note:,Price:,Location:,Address:,Contact:,Hours:,Date:,Duration:,Fee:,Cost:,RSVP:,Tel:,Phone:,Email:,Website:,Schedule:,Program:,Map:,ตารางรอบฉาย,วันจันทร์,วันอังคาร,วันพุธ,วันพฤหัสบดี,วันศุกร์,วันเสาร์,วันอาทิตย์,ภาพ:,อ้างอิง:,ที่มา:,แหล่งที่มา:,เรียบเรียงจาก:,ขอบคุณข้อมูลจาก:,Source:,Reference:">
+      <!-- Grid Item 5 — ตัดลิงก์ซ้ำ + More Info -->
+      <div class="g-item">
+        <div class="g-title">ตัดลิงก์ซ้ำ + ฝังลิงก์อัตโนมัติ</div>
+        <label class="cki"><input type="checkbox" id="d-dropcapurl" checked><div class="n">ตัดลิงก์แหล่งที่มาซ้ำ</div></label>
+        <p class="hint-msg">เช่น [รูปที่ 1] → คำบรรยาย/แหล่งที่มา → ลิงก์ Drive (ลิงก์นี้จะถูกตัดทิ้ง ไม่นับเป็นภาพเพิ่ม)</p>
+        <label class="cki" style="margin-top:4px"><input type="checkbox" id="d-moreinfolinks" checked><div class="n">ฝังลิงก์ให้ "More Info: ชื่อ1 , ชื่อ2" อัตโนมัติ</div></label>
+        <p class="hint-msg">ดึง URL จากบรรทัด "(Tag IG: url)" / "(Tag FB: url)" ที่ตามมา แล้วจับคู่ชื่อกับลิงก์ให้เอง — ตัดบรรทัด Tag ทิ้งหลังใช้แล้ว</p>
+      </div>
+
+      <!-- Grid Item 6 — Art Brief -->
+      <div class="g-item">
+        <div class="g-title">🎨 Art Brief — ข้ามข้อความบรีฟ</div>
+        <label class="cki"><input type="checkbox" id="d-artbrief" checked><div class="n">ข้าม Art Brief (ไม่นำไปฟอร์แมต)</div></label>
+        <p class="hint-msg">ข้ามตามจำนวนบรรทัดที่กำหนด ไม่สนใจภาษา/ตัวพิมพ์ใหญ่-เล็ก (รองรับทั้งบรีฟภาษาไทยและอังกฤษ)</p>
+        <div class="setting-row">
+          <label class="det-label">ข้ามกี่บรรทัด:</label>
+          <input type="number" id="d-artlines" value="2" min="1" max="20" class="num-input s">
+          <span class="hint-msg s">บรรทัด (ไม่นับบรรทัดว่าง) — ปกติบรีฟมี 2 บรรทัด: ชื่อปก + วันที่/สถานที่</span>
+        </div>
+        <div class="setting-row">
+          <label class="det-label">คำ trigger:</label>
+          <input type="text" id="d-arttriggers" class="trigger-input s" value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ,ตัดคำว่า" placeholder="Text in pic,Text on pic,...">
+          <p class="warn-msg">⚠️ ห้ามใส่คำที่ใช้แทรกรูป เช่น "แทรกภาพ/แทรกรูป" และ "แคปชั่น/บรรยาย/caption" (เป็นข้อความใต้ภาพ ต้องเก็บ)</p>
+        </div>
+      </div>
+
+      <!-- Grid Item 7 — Newsletter Prelude -->
+      <div class="g-item">
+        <div class="g-title">📰 Newsletter Prelude</div>
+        <label class="cki"><input type="checkbox" id="d-nlprelude" checked><div class="n">ตัดโซนเปิดเรื่อง Newsletter ทิ้ง</div></label>
+        <p class="hint-msg">เจอ label เหล่านี้ → ตัดย่อหน้านั้นทิ้ง แล้วเผื่อข้ามย่อหน้าคั่นได้ตามจำนวนที่ตั้งไว้ ก่อนเจอ label ถัดไป</p>
+        <div class="setting-row">
+          <label class="det-label">ระยะเผื่อ:</label>
+          <input type="number" id="d-nltolerance" value="1" min="0" max="5" class="num-input s">
+          <span class="hint-msg s">ย่อหน้า — จำนวนย่อหน้าไม่มี label คั่นได้ก่อนถือว่าจบโซน</span>
+        </div>
+        <div class="setting-row">
+          <label class="det-label">คำ label:</label>
+          <input type="text" id="d-nltriggers" class="trigger-input s" value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:" placeholder="เท็กซ์ทำปก:,บรีฟปก:,...">
+          <p class="hint-msg">ใช้กับงานแบบ Newsletter เท่านั้น — ถ้าไม่มี label เหล่านี้ในต้นฉบับ ฟีเจอร์นี้จะไม่ทำงานเลย ไม่กระทบข่าวปกติ</p>
+        </div>
+      </div>
+
+      <!-- Grid Item 8 — หัวข้อย่อย -->
+      <div class="g-item">
+        <div class="g-title">📌 หัวข้อย่อย — ไม่ใส่ ##</div>
+        <label class="cki"><input type="checkbox" id="d-sh" checked><div class="n">เปิดใช้งาน</div></label>
         <p class="hint-msg">บรรทัด <strong>**ข้อความ**</strong> ที่ขึ้นต้นด้วยคำเหล่านี้จะไม่ใส่ ## นำหน้า (ยังคงตัวหนา ** ไว้เหมือนเดิม) — เหมาะกับ Label ข้อมูล วันที่ ตาราง ที่ไม่ใช่หัวข้อหลัก</p>
+        <div class="setting-row">
+          <label class="det-label">คำที่ขึ้นต้นแล้วถือเป็นหัวข้อย่อย:</label>
+          <input type="text" id="d-shlabels" class="trigger-input s" value="Time:,When:,Where:,Admission:,Booking:,More Info:,Note:,Price:,Location:,Address:,Contact:,Hours:,Date:,Duration:,Fee:,Cost:,RSVP:,Tel:,Phone:,Email:,Website:,Schedule:,Program:,Map:,ตารางรอบฉาย,วันจันทร์,วันอังคาร,วันพุธ,วันพฤหัสบดี,วันศุกร์,วันเสาร์,วันอาทิตย์,ภาพ:,อ้างอิง:,ที่มา:,แหล่งที่มา:,เรียบเรียงจาก:,ขอบคุณข้อมูลจาก:,Source:,Reference:" placeholder="Time:,When:,Where:,...">
+        </div>
       </div>
+
     </div>
   </div>
 </details><div class="grid">

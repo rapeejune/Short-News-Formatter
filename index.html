@@ -587,10 +587,21 @@ document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
   }
 }});
 
-// Image helpers
+// Image Detection
 const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl'),dNLP=$('d-nlprelude'),dNLTol=$('d-nltolerance'),dNLT=$('d-nltriggers'),dBareNum=$('d-barenum'),dMoreInfoLinks=$('d-moreinfolinks');
-const isHint=s=>{if(!dH.checked)return false;const low=s.toLowerCase();const list=(dHT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
-const isPic=s=>{if(!dP.checked)return false;const low=s.toLowerCase();const list=(dPT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);return list.some(t=>low.includes(t))};
+const stripBoldMarkers=(s)=>(s||'').replace(/^\*\*|\*\*$/g,'').trim();
+const isHint=s=>{
+  if(!dH.checked)return false;
+  const low=stripBoldMarkers(s).toLowerCase();
+  const list=(dHT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+  return list.some(t=>low.includes(t));
+};
+const isPic=s=>{
+  if(!dP.checked)return false;
+  const low=s.toLowerCase();
+  const list=(dPT.value||'').split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+  return list.some(t=>low.includes(t));
+};
 const isImgU=b=>dU.checked&&b;
 const isFn=s=>{if(!dF.checked)return false;const ps=s.split('/').map(p=>p.trim());let fc=0,vc=0;for(const p of ps){if(!p)continue;vc++;if(/\.(jpg|jpeg|png|webp|gif|heic|heif|tiff?)$/i.test(p)){fc++;continue}if(p.toLowerCase().includes('palanuson')){fc++;continue}if(/^(IMG|DSC|DJI|DCIM|PHOTO|PIC|COVER|THUMB|HERO|BANNER)[_-]\d/.test(p)||/^(Screenshot|Screen\s?Shot)[_\s-]\d/i.test(p)){fc++;continue}if(dBareNum.checked&&/^\d+$/.test(p)){fc++;continue}}return vc>0&&fc===vc};
 const refDom=['thestandard.co','bbc.com','reuters.com','apnews.com','nytimes.com','theguardian.com','bloomberg.com','cnn.com','bangkokpost.com','matichon.co.th','thairath.co.th','thaipbs.or.th','twitter.com','x.com','facebook.com','youtube.com','youtu.be','wikipedia.org'];
@@ -741,8 +752,10 @@ function run(){
   const abTriggers=($('d-arttriggers').value||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
   const isArtBrief=(s)=>{
     if(!abEnabled||!abTriggers.length)return false;
-    const low=s.toLowerCase();
-    return abTriggers.some(t=>low.startsWith(t));
+    const stripped=stripBoldMarkers(s);
+    const low=stripped.toLowerCase();
+    // เช็คปกติ และตรวจจับกรณี H2/ตัวหนา
+    return abTriggers.some(t=>low.startsWith(t))||abTriggers.some(t=>low.startsWith('## '+t)||low.startsWith('**'+t+'**'));
   };
 
   // Sub-heading label — บรรทัด **label...** ที่ไม่ควรใส่ ## (วันที่, Time:, Where: ฯลฯ)
@@ -870,12 +883,24 @@ function run(){
         break;
       }
 
-      // ถ้า rich paste ฝังลิงก์จริงมาให้แล้ว (มี [ข้อความ](url) อยู่ในค่าที่ดึงมา) — ไม่ต้องเดา ใช้ตามที่มีเลย
-      // แค่เก็บกวาดบรรทัด (Tag...) ที่เหลือทิ้ง (เป็นข้อมูลสำรองที่ไม่จำเป็นแล้ว)
-      const alreadyHasRealLink=/\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(namesRaw);
-      if(alreadyHasRealLink){
-        bodyLines.push(`**More Info:** ${namesRaw}`);
-        logs.push(`  🔗 MoreInfo(L${i}): มีลิงก์ฝังมาแล้วจาก rich paste — ใช้ตามเดิม, ตัดบรรทัด (Tag...) ที่เหลือทิ้ง ${tagUrls.length} เส้น`);
+      // ถ้า rich paste ฝังลิงก์มาให้แล้ว — ตรวจจับทั้งแบบปกติ ([text](url)) และแบบ @url: prefix
+      // พร้อม clean ** เกิน และแปลง @url: เป็นลิงก์จริง
+      const realLinkMatch=namesRaw.match(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/);
+      const atUrlMatch=namesRaw.match(/\[([^\]]+)\]\(@url:\s*`{0,1}(https?:\/\/[^`]+)`{0,1}\)/);
+      const hasRealLink=!!(realLinkMatch||atUrlMatch);
+      if(hasRealLink){
+        // Clean ** เกินใน link text (เช่น [****text****] → [text])
+        const cleanText=(t)=>t.replace(/\*{2,}/g,'**').replace(/\*\*(.+)\*\*/g,(m,inner)=>inner);
+        let finalText,finalUrl;
+        if(realLinkMatch){
+          finalText=cleanText(realLinkMatch[1]);
+          finalUrl=realLinkMatch[0].match(/\(https?:\/\/[^)]+\)/)[0].slice(1,-1);
+        }else{
+          finalText=cleanText(atUrlMatch[1]);
+          finalUrl=atUrlMatch[0].match(/`?(https?:\/\/[^`]+)`?/)[1];
+        }
+        bodyLines.push(`**More Info:** [${finalText}](${finalUrl})`);
+        logs.push(`  🔗 MoreInfo(L${i}): มีลิงก์ฝังจาก rich paste — ทำความสะอาดแล้ว (${finalText} → ${finalUrl}), ตัดบรรทัด (Tag...) ที่เหลือทิ้ง ${tagUrls.length} เส้น`);
         i=j-1;
         lastE=false;
         continue;

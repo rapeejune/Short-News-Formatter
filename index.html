@@ -5,179 +5,999 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>News Formatter + TOC</title>
 <style>
+/* ============================================
+   News Formatter + TOC — Modern Clean UI
+   ============================================ */
+
+/* --- Reset & Base --- */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f7;color:#1d1d1f;padding:12px;line-height:1.5}
-.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 
-.hdr{background:#fff;padding:14px 20px;border-radius:16px;border:1px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;gap:10px}
-.hdr h1{font-size:17px;font-weight:700;color:#1e3a5f;display:flex;align-items:center;gap:8px}
-.hdr-dot{width:7px;height:7px;border-radius:50%;background:#e62227;animation:pulse 2.5s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.hdr p{font-size:11px;color:#86868b;margin-top:2px}
-.btn-sm{font-size:11px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#6e6e73;padding:4px 11px;border-radius:99px;cursor:pointer;white-space:nowrap}
-.btn-sm:hover{border-color:#e62227;color:#e62227;background:rgba(230,34,39,.05)}
+:root{
+  --bg:#f4f5f7;
+  --surface:#fff;
+  --surface-hover:#f8f9fb;
+  --border:rgba(0,0,0,.07);
+  --border-light:rgba(0,0,0,.04);
+  --text:#1d1d1f;
+  --text-secondary:#6e6e73;
+  --text-tertiary:#aeaeb2;
+  --accent:#0071e3;
+  --accent-bg:rgba(0,113,227,.06);
+  --danger:#e62227;
+  --danger-bg:rgba(230,34,39,.06);
+  --warning:#d97706;
+  --warning-bg:rgba(217,119,6,.1);
+  --success:#34c759;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.12);
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-lg:16px;
+  --radius-xl:20px;
+  --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'SF Mono','Fira Code',Consolas,monospace;
+  --transition:0.2s cubic-bezier(.4,0,.2,1);
+}
 
-.mtabs{display:flex;gap:4px;background:rgba(0,0,0,.04);padding:3px;border-radius:8px;width:fit-content}
-.mtab{padding:7px 14px;font-size:12px;font-weight:500;border-radius:6px;border:none;cursor:pointer;background:0;color:#6e6e73;transition:.15s}
-.mtab:hover{color:#1d1d1f;background:rgba(0,0,0,.04)}
-.mtab.on{background:#fff;color:#0071e3;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  padding:20px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
 
-.sbar{background:#fff;padding:10px 16px;border-radius:12px;border:1px solid rgba(0,0,0,.08);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.wrap{
+  max-width:1280px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+/* --- Header --- */
+.hdr{
+  background:var(--surface);
+  padding:16px 24px;
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  box-shadow:var(--shadow-sm);
+}
+.hdr h1{
+  font-size:18px;
+  font-weight:700;
+  color:#1e3a5f;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  letter-spacing:-.3px;
+}
+.hdr-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--danger);
+  animation:pulse 2.5s ease-in-out infinite;
+  flex-shrink:0;
+}
+@keyframes pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:.5;transform:scale(.85)}
+}
+.hdr p{
+  font-size:12px;
+  color:var(--text-secondary);
+  margin-top:3px;
+  line-height:1.4;
+}
+.hdr-actions{display:flex;gap:8px;align-items:center}
+
+/* --- Buttons --- */
+.btn{
+  font-size:13px;
+  font-weight:500;
+  padding:8px 16px;
+  border-radius:99px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text-secondary);
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all var(--transition);
+  font-family:inherit;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  background:var(--accent-bg);
+}
+.btn:active{transform:scale(.97)}
+
+.btn-sm{
+  font-size:12px;
+  padding:5px 12px;
+  border-radius:99px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text-secondary);
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all var(--transition);
+  font-family:inherit;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+.btn-sm:hover{
+  border-color:var(--danger);
+  color:var(--danger);
+  background:var(--danger-bg);
+}
+
+/* --- Tabs (Main) --- */
+.mtabs{
+  display:flex;
+  gap:4px;
+  background:rgba(0,0,0,.03);
+  padding:4px;
+  border-radius:var(--radius-sm);
+  width:fit-content;
+  border:1px solid var(--border-light);
+}
+.mtab{
+  padding:8px 18px;
+  font-size:13px;
+  font-weight:500;
+  border-radius:var(--radius-sm);
+  border:none;
+  cursor:pointer;
+  background:transparent;
+  color:var(--text-secondary);
+  transition:all var(--transition);
+  font-family:inherit;
+  white-space:nowrap;
+}
+.mtab:hover{
+  color:var(--text);
+  background:rgba(0,0,0,.03);
+}
+.mtab.on{
+  background:var(--surface);
+  color:var(--accent);
+  box-shadow:var(--shadow-sm);
+}
+
+/* --- Sidebar / Settings Bar --- */
+.sbar{
+  background:var(--surface);
+  padding:14px 18px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--border);
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:center;
+  box-shadow:var(--shadow-sm);
+}
 .sbar.hide{display:none}
-.fg{display:flex;align-items:center;gap:5px}
-.fg label{font-size:11px;font-weight:600;color:#6e6e73;white-space:nowrap}
-.fg select,.fg input[type="text"]{font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:4px 8px;outline:none;font-family:inherit}
-.fg select:focus,.fg input:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.15)}
 
-.ci-row{display:flex;align-items:center;gap:6px}
-.ci-d{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:.15s;position:relative;display:flex;align-items:center;justify-content:center}
-.ci-d span{position:absolute;bottom:-15px;font-size:8px;color:#aeaeb2;white-space:nowrap;opacity:0;transition:.15s;pointer-events:none;font-weight:500}
-.ci-d:hover{transform:scale(1.12)}
-.ci-d:hover span,.ci-d.on span{opacity:1}
-.ci-d.on{border-color:rgba(0,0,0,.3);transform:scale(1.12)}
+.fg{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.fg label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--text-secondary);
+  white-space:nowrap;
+  letter-spacing:.2px;
+}
+.fg select,
+.fg input[type="text"]{
+  font-size:13px;
+  padding:7px 11px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--surface);
+  color:var(--text);
+  outline:none;
+  font-family:inherit;
+  transition:all var(--transition);
+  min-width:140px;
+}
+.fg select:focus,
+.fg input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,113,227,.12);
+}
+.fg select{border-radius:var(--radius-sm) var(--radius-sm) 0 0;}
 
-/* H2 chips (toggle) */
-.h2-chips{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
-.h2c{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:8px;font-size:12px;border:1px solid rgba(0,0,0,.06);background:#f8f8f8;transition:.15s}
-.h2c .num{font-family:monospace;font-size:10px;color:#e62227;min-width:18px}
-.h2c .txt{flex:1;color:#1d1d1f}
-.h2c .tag{font-family:monospace;font-size:9px;color:#aeaeb2;background:rgba(0,0,0,.04);padding:1px 5px;border-radius:4px}
-.h2c .rm{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.1);background:0;color:#aeaeb2;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
-.h2c .rm:hover{border-color:#e62227;color:#e62227;background:rgba(230,34,39,.06)}
-.h2c.off{opacity:.35;text-decoration:line-through}
-.h2c.off .num{color:#aeaeb2}
+/* --- CI Color Swatches --- */
+.ci-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:4px;
+  flex-wrap:wrap;
+}
+.ci-d{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  cursor:pointer;
+  border:3px solid transparent;
+  transition:all var(--transition);
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:var(--shadow-sm);
+}
+.ci-d:hover{
+  transform:scale(1.15);
+  box-shadow:var(--shadow-md);
+}
+.ci-d span{
+  position:absolute;
+  bottom:-20px;
+  font-size:10px;
+  color:var(--text-tertiary);
+  white-space:nowrap;
+  opacity:0;
+  transition:opacity var(--transition);
+  pointer-events:none;
+  font-weight:500;
+  letter-spacing:.2px;
+}
+.ci-d:hover span,
+.ci-d.on span{
+  opacity:1;
+}
+.ci-d.on{
+  border-color:var(--text);
+  transform:scale(1.15);
+  box-shadow:0 0 0 2px var(--surface), 0 0 0 4px currentColor;
+}
 
-/* Dark mode toggle */
-.dm-btn{font-size:14px;width:30px;height:30px;border-radius:50%;border:1px solid rgba(0,0,0,.12);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
-.dm-btn:hover{background:rgba(0,0,0,.06)}
+/* --- H2 Chips --- */
+.h2-chips{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-bottom:10px;
+}
+.h2c{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 12px;
+  border-radius:var(--radius-sm);
+  font-size:13px;
+  border:1px solid var(--border-light);
+  background:var(--surface-hover);
+  transition:all var(--transition);
+}
+.h2c .num{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--danger);
+  min-width:24px;
+  font-weight:600;
+}
+.h2c .txt{
+  flex:1;
+  color:var(--text);
+  font-weight:500;
+}
+.h2c .tag{
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:var(--text-tertiary);
+  background:rgba(0,0,0,.03);
+  padding:2px 8px;
+  border-radius:4px;
+}
+.h2c .rm{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--text-tertiary);
+  font-size:12px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  transition:all var(--transition);
+  padding:0;
+}
+.h2c .rm:hover{
+  border-color:var(--danger);
+  color:var(--danger);
+  background:var(--danger-bg);
+}
+.h2c.off{
+  opacity:.45;
+  text-decoration:line-through;
+}
+.h2c.off .num{color:var(--text-tertiary);}
 
-/* Dark mode */
-body.dark{background:#1c1c1e;color:#f5f5f7}
-body.dark .hdr,body.dark .sbar,body.dark .pnl,body.dark .out-card{background:#2c2c2e;border-color:rgba(255,255,255,.1)}
-body.dark .hdr h1{color:#f5f5f7}
-body.dark .hdr p,body.dark .fg label,body.dark .col-lbl{color:#98989d}
-body.dark .fg select,body.dark .fg input[type="text"],body.dark textarea{background:#3a3a3c;border-color:rgba(255,255,255,.12);color:#f5f5f7}
-body.dark .fg select:focus,body.dark .fg input:focus,body.dark textarea:focus{border-color:#0a84ff;box-shadow:0 0 0 2px rgba(10,132,255,.2)}
-body.dark .mtab{color:#98989d}
-body.dark .mtab:hover{color:#f5f5f7;background:rgba(255,255,255,.06)}
-body.dark .mtab.on{background:#3a3a3c;color:#0a84ff}
-body.dark .btn-sm{background:#2c2c2e;border-color:rgba(255,255,255,.12);color:#98989d}
-body.dark .btn-sm:hover{border-color:#e62227;color:#e62227}
-body.dark .otab{color:#98989d}
-body.dark .otab:hover{color:#f5f5f7}
-body.dark .otab.on{color:#e62227}
-body.dark .raw-area{background:#1c1c1e}
-body.dark .html-area{background:#1c1c1e;color:#98989d;border-color:rgba(255,255,255,.06)}
-body.dark .prev-area{color:#e5e5ea}
-body.dark .prev-area .p-cat{color:#636366}
-body.dark .prev-area .p-hl{color:#f5f5f7}
-body.dark .prev-area .p-meta{color:#98989d;border-color:rgba(255,255,255,.08)}
-body.dark .prev-area .p-meta strong{color:#f5f5f7}
-body.dark .prev-area .p-h2{background:#3a3a3c}
-body.dark .prev-area .p-img{background:#3a3a3c;border-color:#636366;color:#98989d}
-body.dark .prev-area .p-toc{background:#3a3a3c;box-shadow:0 8px 24px rgba(0,0,0,.3)}
-body.dark .cpbar{border-color:rgba(255,255,255,.06)}
-body.dark .cpbar .info{color:#636366}
-body.dark .cbtn{background:#3a3a3c;border-color:rgba(255,255,255,.1);color:#98989d}
-body.dark .cbtn:hover{border-color:#0a84ff;color:#0a84ff}
-body.dark .bdg{background:#3a3a3c;color:#636366}
-body.dark .bdg.im{background:rgba(217,119,6,.12);color:#d97706}
-body.dark .bdg.h2b{background:rgba(230,34,39,.12);color:#e62227}
-body.dark .pnl summary{color:#98989d}
-body.dark .pnl .pb{border-color:rgba(255,255,255,.06)}
-body.dark .cki .n{color:#f5f5f7}
-body.dark .ci-d span{color:#636366}
-body.dark .ci-d.on{border-color:rgba(255,255,255,.4)}
-body.dark .h2c{background:#3a3a3c;border-color:rgba(255,255,255,.06)}
-body.dark .h2c .txt{color:#f5f5f7}
-body.dark .dm-btn{background:#2c2c2e;border-color:rgba(255,255,255,.12);color:#98989d}
-body.dark .dm-btn:hover{background:rgba(255,255,255,.08)}
-body.dark .toast{background:rgba(245,245,247,.92);color:#1d1d1f}
-body.dark .foot{color:#636366}
-body.dark .dbg pre{background:#3a3a3c;color:#98989d}
+/* --- Dark Mode Toggle --- */
+.dm-btn{
+  font-size:16px;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:var(--surface);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all var(--transition);
+  box-shadow:var(--shadow-sm);
+}
+.dm-btn:hover{
+  background:var(--surface-hover);
+  transform:scale(1.08);
+}
+.dm-btn:active{transform:scale(.95)}
 
-.pnl{background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,.08);overflow:hidden}
-.pnl summary{padding:10px 16px;cursor:pointer;font-size:12px;font-weight:500;color:#6e6e73;user-select:none;list-style:none;display:flex;align-items:center;gap:6px}
+/* --- Panels / Accordion --- */
+.pnl{
+  background:var(--surface);
+  border-radius:var(--radius-md);
+  border:1px solid var(--border);
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+.pnl summary{
+  padding:14px 18px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-secondary);
+  user-select:none;
+  list-style:none;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  letter-spacing:.2px;
+}
 .pnl summary::-webkit-details-marker{display:none}
-.pnl summary::before{content:'▶';font-size:9px;color:#aeaeb2;transition:transform .15s}
+.pnl summary::before{
+  content:'▶';
+  font-size:10px;
+  color:var(--text-tertiary);
+  transition:transform var(--transition);
+}
 .pnl[open] summary::before{transform:rotate(90deg)}
-.pnl .pb{padding:4px 16px 12px;border-top:1px solid rgba(0,0,0,.05)}
-.pnl .ht{font-size:10px;color:#aeaeb2;margin-bottom:6px}
-.ckg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-@media(max-width:640px){.ckg{grid-template-columns:1fr}}
-.cki{display:flex;align-items:flex-start;gap:7px;padding:5px 7px;border-radius:7px;cursor:pointer;font-size:12px}
-.cki:hover{background:#f8f8f8}
-.cki input{margin-top:2px;accent-color:#0071e3}
-.cki .n{font-weight:500;color:#1d1d1f}
+.pnl .pb{
+  padding:6px 18px 16px;
+  border-top:1px solid var(--border-light);
+}
+.pnl .ht{
+  font-size:11px;
+  color:var(--text-tertiary);
+  margin-bottom:10px;
+  line-height:1.5;
+}
 
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
-@media(max-width:800px){.grid{grid-template-columns:1fr}}
-.col{display:flex;flex-direction:column;gap:5px}
-.col-lbl{font-size:12px;font-weight:600;color:#6e6e73;display:flex;justify-content:space-between;align-items:center;gap:4px}
-.badges{display:flex;gap:5px}
-.bdg{font-size:9px;color:#aeaeb2;background:#f5f5f7;padding:2px 6px;border-radius:4px;white-space:nowrap}
-.bdg.im{color:#d97706;background:#fffbeb}
-.bdg.h2b{color:#e62227;background:rgba(230,34,39,.06)}
+/* --- Checkbox Grid --- */
+.ckg{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+@media(max-width:640px){
+  .ckg{grid-template-columns:1fr}
+}
+.cki{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  font-size:13px;
+  transition:background var(--transition);
+}
+.cki:hover{background:var(--surface-hover)}
+.cki input{
+  margin-top:3px;
+  accent-color:var(--accent);
+  width:16px;
+  height:16px;
+  cursor:pointer;
+}
+.cki .n{
+  font-weight:500;
+  color:var(--text);
+  line-height:1.4;
+}
 
-textarea{width:100%;min-height:380px;padding:11px;border-radius:12px;border:1px solid #d2d2d7;outline:none;resize:none;font-size:13px;line-height:1.7;font-family:inherit}
-textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
+/* --- Grid Layout --- */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  align-items:start;
+}
+@media(max-width:800px){
+  .grid{grid-template-columns:1fr}
+}
+.col{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.col-lbl{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text-secondary);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  letter-spacing:.2px;
+}
+.badges{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.bdg{
+  font-size:11px;
+  color:var(--text-tertiary);
+  background:var(--surface-hover);
+  padding:3px 9px;
+  border-radius:99px;
+  white-space:nowrap;
+  border:1px solid var(--border-light);
+  font-weight:500;
+}
+.bdg.im{
+  color:var(--warning);
+  background:var(--warning-bg);
+  border-color:rgba(217,119,6,.2);
+}
+.bdg.h2b{
+  color:var(--danger);
+  background:var(--danger-bg);
+  border-color:rgba(230,34,39,.15);
+}
 
-/* Output card */
-.out-card{background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.08);overflow:hidden;display:flex;flex-direction:column;min-height:460px}
+/* --- Textarea --- */
+textarea{
+  width:100%;
+  min-height:400px;
+  padding:14px 16px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+  outline:none;
+  resize:none;
+  font-size:14px;
+  line-height:1.8;
+  font-family:inherit;
+  transition:all var(--transition);
+  box-shadow:var(--shadow-sm);
+}
+textarea:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,113,227,.1);
+}
+textarea::placeholder{color:var(--text-tertiary)}
 
-/* Output tabs */
-.otabs{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,0,0,.08);padding-right:10px;gap:8px}
-.otabs-left{display:flex;overflow-x:auto;flex:1;min-width:0}
-.cbtn-top{flex-shrink:0}
-.otab{padding:10px 16px;font-size:12px;font-weight:500;color:#6e6e73;cursor:pointer;border:none;background:none;border-bottom:2.5px solid transparent;white-space:nowrap;transition:.15s;font-family:inherit;display:flex;align-items:center;gap:5px}
-.otab:hover{color:#1d1d1f}
-.otab.on{color:#e62227;border-bottom-color:#e62227}
-.otab .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
+/* --- Output Card --- */
+.out-card{
+  background:var(--surface);
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-height:480px;
+  box-shadow:var(--shadow-sm);
+}
 
-/* Panels */
-.opanel{flex:1;display:none;flex-direction:column}
+/* --- Output Tabs --- */
+.otabs{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:1px solid var(--border);
+  padding:0 16px;
+  gap:8px;
+}
+.otabs-left{
+  display:flex;
+  overflow-x:auto;
+  flex:1;
+  min-width:0;
+  gap:4px;
+  padding:4px 0;
+}
+.otab{
+  padding:10px 18px;
+  font-size:13px;
+  font-weight:500;
+  color:var(--text-secondary);
+  cursor:pointer;
+  border:none;
+  background:transparent;
+  border-bottom:2.5px solid transparent;
+  white-space:nowrap;
+  transition:all var(--transition);
+  font-family:inherit;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border-radius:0;
+  margin:0;
+}
+.otab:hover{color:var(--text)}
+.otab.on{
+  color:var(--danger);
+  border-bottom-color:var(--danger);
+}
+.otab .dot{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:currentColor;
+  opacity:.5;
+}
+.cbtn-top{
+  flex-shrink:0;
+  margin-top:4px;
+}
+
+/* --- Panels --- */
+.opanel{
+  flex:1;
+  display:none;
+  flex-direction:column;
+}
 .opanel.show{display:flex}
 
-/* Raw output */
-.raw-area{flex:1;background:#1c1c1e;color:#e5e5ea;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:12px;line-height:1.7;padding:14px;border:none;outline:none;resize:none;border-radius:0;min-height:350px}
+/* --- Raw Output --- */
+.raw-area{
+  flex:1;
+  background:#1d1d1f;
+  color:#e5e5ea;
+  font-family:var(--font-mono);
+  font-size:13px;
+  line-height:1.7;
+  padding:16px;
+  border:none;
+  outline:none;
+  resize:none;
+  border-radius:0;
+  min-height:360px;
+}
 
-/* HTML code output */
-.html-area{flex:1;background:#f5f5f7;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:11px;line-height:1.6;color:#6e6e73;padding:14px;overflow-y:auto;min-height:350px;white-space:pre-wrap;word-break:break-word}
+/* --- HTML Code Output --- */
+.html-area{
+  flex:1;
+  background:var(--bg);
+  font-family:var(--font-mono);
+  font-size:12px;
+  line-height:1.6;
+  color:var(--text-secondary);
+  padding:16px;
+  overflow-y:auto;
+  min-height:360px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  border-top:1px solid var(--border-light);
+}
 
-/* Preview */
-.prev-area{flex:1;padding:20px 18px;overflow-y:auto;font-size:14px;line-height:1.8;color:#333;min-height:350px}
-.prev-area .p-cat{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#aeaeb2;margin-bottom:6px}
-.prev-area .p-hl{font-size:20px;font-weight:700;color:#1d1d1f;line-height:1.4;margin-bottom:12px}
-.prev-area .p-meta{font-size:12px;color:#86868b;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f0f0f0}
-.prev-area .p-meta strong{color:#1d1d1f}
-.prev-area .p-para{margin-bottom:14px}
-.prev-area .p-para a{color:#0071e3;text-decoration:underline}
-.prev-area .p-img{background:#f0f0f0;border:2px dashed #d2d2d7;border-radius:10px;padding:24px;text-align:center;color:#aeaeb2;font-size:12px;margin:14px 0}
-.prev-area .p-toc{background:#fff;border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.1);margin:18px 0}
-.prev-area .p-toc h3{font-size:17px;font-weight:700;margin-bottom:4px}
-.prev-area .p-toc .bar{height:5px;border-radius:2px;margin-bottom:10px;width:100%}
-.prev-area .p-toc ul{padding-left:18px;margin:0;font-size:13px}
-.prev-area .p-toc li{margin:6px 0}
-.prev-area .p-toc a{color:#0071e3;text-decoration:none}
-.prev-area .p-h2{margin:18px 0 10px;padding:10px 10px 10px 15px;font-size:16px;font-weight:700;background:#f8f8f8}
-.prev-area .p-ref{color:#0071e3;font-size:13px;word-break:break-all;margin-bottom:10px}
-.prev-area .empty-p{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;color:#aeaeb2;font-size:14px;gap:6px}
-.prev-area .empty-p small{font-size:12px;color:#d2d2d7}
+/* --- Preview --- */
+.prev-area{
+  flex:1;
+  padding:24px 22px;
+  overflow-y:auto;
+  font-size:15px;
+  line-height:1.9;
+  color:#333;
+  min-height:360px;
+}
+.prev-area .p-cat{
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--text-tertiary);
+  margin-bottom:8px;
+}
+.prev-area .p-hl{
+  font-size:22px;
+  font-weight:700;
+  color:var(--text);
+  line-height:1.4;
+  margin-bottom:14px;
+  letter-spacing:-.5px;
+}
+.prev-area .p-meta{
+  font-size:13px;
+  color:var(--text-secondary);
+  margin-bottom:18px;
+  padding-bottom:14px;
+  border-bottom:1px solid #eee;
+}
+.prev-area .p-meta strong{color:var(--text)}
+.prev-area .p-para{margin-bottom:16px}
+.prev-area .p-para a{
+  color:var(--accent);
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+.prev-area .p-img{
+  background:#f0f0f2;
+  border:2px dashed #d2d2d7;
+  border-radius:var(--radius-md);
+  padding:28px;
+  text-align:center;
+  color:var(--text-tertiary);
+  font-size:13px;
+  margin:16px 0;
+}
+.prev-area .p-toc{
+  background:var(--surface);
+  border-radius:var(--radius-md);
+  padding:22px;
+  box-shadow:var(--shadow-md);
+  margin:20px 0;
+  border:1px solid var(--border);
+}
+.prev-area .p-toc h3{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.prev-area .p-toc .bar{
+  height:5px;
+  border-radius:3px;
+  margin-bottom:12px;
+  width:100%;
+}
+.prev-area .p-toc ul{
+  padding-left:20px;
+  margin:0;
+  font-size:14px;
+}
+.prev-area .p-toc li{margin:7px 0}
+.prev-area .p-toc a{
+  color:var(--accent);
+  text-decoration:none;
+}
+.prev-area .p-h2{
+  margin:20px 0 12px;
+  padding:12px 12px 12px 16px;
+  font-size:17px;
+  font-weight:700;
+  background:#f8f8f8;
+}
+.prev-area .p-ref{
+  color:var(--accent);
+  font-size:14px;
+  word-break:break-all;
+  margin-bottom:12px;
+}
+.prev-area .empty-p{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:300px;
+  color:var(--text-tertiary);
+  font-size:15px;
+  gap:8px;
+}
+.prev-area .empty-p small{font-size:13px;color:#d2d2d7}
 
-/* Copy bar in each panel */
-.cpbar{padding:8px 14px;border-top:1px solid rgba(0,0,0,.06);display:flex;justify-content:space-between;align-items:center}
-.cpbar .info{font-size:10px;color:#aeaeb2}
-.cbtn{font-size:11px;font-weight:500;padding:6px 13px;border-radius:7px;border:1px solid rgba(0,0,0,.1);background:#fff;color:#6e6e73;cursor:pointer;transition:.15s;font-family:inherit;display:flex;align-items:center;gap:4px;white-space:nowrap}
-.cbtn:hover{border-color:#0071e3;color:#0071e3;background:rgba(0,113,227,.04)}
-.cbtn.ok{border-color:#34c759;color:#34c759;background:rgba(52,199,89,.06)}
+/* --- Copy Bar --- */
+.cpbar{
+  padding:10px 16px;
+  border-top:1px solid var(--border-light);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:var(--surface-hover);
+}
+.cpbar .info{font-size:11px;color:var(--text-tertiary)}
+.cbtn{
+  font-size:12px;
+  font-weight:500;
+  padding:8px 16px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text-secondary);
+  cursor:pointer;
+  transition:all var(--transition);
+  font-family:inherit;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+}
+.cbtn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  background:var(--accent-bg);
+}
+.cbtn.ok{
+  border-color:var(--success);
+  color:var(--success);
+  background:rgba(52,199,89,.08);
+}
 
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(50px);padding:9px 18px;background:rgba(29,29,31,.92);backdrop-filter:blur(8px);border-radius:99px;font-size:12px;color:#fff;z-index:100;opacity:0;transition:.25s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+/* --- Toast --- */
+.toast{
+  position:fixed;
+  bottom:24px;
+  left:50%;
+  transform:translateX(-50%) translateY(60px);
+  padding:10px 20px;
+  background:rgba(29,29,31,.94);
+  backdrop-filter:blur(10px);
+  border-radius:99px;
+  font-size:13px;
+  color:#fff;
+  z-index:100;
+  opacity:0;
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;
+  white-space:nowrap;
+  box-shadow:var(--shadow-lg);
+}
+.toast.show{
+  transform:translateX(-50%) translateY(0);
+  opacity:1;
+}
 
-.foot{text-align:right;font-size:11px;color:#aeaeb2;grid-column:1/-1}
-.foot kbd{background:#e5e5ea;border:1px solid #d2d2d7;border-radius:3px;padding:1px 5px;font-size:9px;color:#6e6e73}
-.dbg summary{font-size:10px;color:#aeaeb2;cursor:pointer}
-.dbg pre{margin-top:5px;padding:7px;background:#f5f5f7;border-radius:7px;font-size:9px;color:#6e6e73;font-family:monospace;overflow:auto;max-height:150px;white-space:pre-wrap}
+/* --- Footer --- */
+.foot{
+  text-align:right;
+  font-size:12px;
+  color:var(--text-tertiary);
+  grid-column:1/-1;
+  padding:4px 4px 0;
+}
+.foot kbd{
+  background:var(--surface-hover);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:2px 7px;
+  font-size:10px;
+  color:var(--text-secondary);
+  font-family:var(--font-mono);
+}
+
+/* --- Debug --- */
+.dbg summary{
+  font-size:11px;
+  color:var(--text-tertiary);
+  cursor:pointer;
+  padding:4px 0;
+}
+.dbg pre{
+  margin-top:8px;
+  padding:12px;
+  background:#f8f9fb;
+  border-radius:var(--radius-sm);
+  font-size:11px;
+  color:var(--text-secondary);
+  font-family:var(--font-mono);
+  overflow:auto;
+  max-height:160px;
+  white-space:pre-wrap;
+  border:1px solid var(--border-light);
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
+body.dark{
+  background:#1a1a1c;
+  color:#f0f0f2;
+}
+body.dark .hdr,
+body.dark .sbar,
+body.dark .pnl,
+body.dark .out-card{
+  background:#252527;
+  border-color:rgba(255,255,255,.08);
+}
+body.dark .hdr h1{color:#f0f0f2}
+body.dark .hdr p,
+body.dark .fg label,
+body.dark .col-lbl,
+body.dark .pnl summary{color:#98989d}
+body.dark .fg select,
+body.dark .fg input[type="text"],
+body.dark textarea{
+  background:#2d2d30;
+  border-color:rgba(255,255,255,.1);
+  color:#f0f0f2;
+}
+body.dark .fg select:focus,
+body.dark .fg input:focus,
+body.dark textarea:focus{
+  border-color:#0a84ff;
+  box-shadow:0 0 0 3px rgba(10,132,255,.2);
+}
+body.dark .mtab{color:#8a8a8d}
+body.dark .mtab:hover{color:#f0f0f2;background:rgba(255,255,255,.04)}
+body.dark .mtab.on{background:#333338;color:#0a84ff}
+body.dark .btn{background:#2d2d30;border-color:rgba(255,255,255,.1);color:#98989d}
+body.dark .btn:hover{border-color:#0a84ff;color:#0a84ff;background:rgba(10,132,255,.1)}
+body.dark .btn-sm{background:#2d2d30;border-color:rgba(255,255,255,.1);color:#98989d}
+body.dark .btn-sm:hover{border-color:var(--danger);color:var(--danger)}
+body.dark .otab{color:#8a8a8d}
+body.dark .otab:hover{color:#f0f0f2}
+body.dark .otab.on{color:var(--danger)}
+body.dark .raw-area{background:#121214}
+body.dark .html-area{background:#1a1a1c;color:#8a8a8d;border-color:rgba(255,255,255,.06)}
+body.dark .prev-area{color:#d4d4d8}
+body.dark .prev-area .p-cat{color:#636366}
+body.dark .prev-area .p-hl{color:#f0f0f2}
+body.dark .prev-area .p-meta{color:#98989d;border-color:rgba(255,255,255,.08)}
+body.dark .prev-area .p-meta strong{color:#f0f0f2}
+body.dark .prev-area .p-h2{background:#2d2d30}
+body.dark .prev-area .p-img{background:#252527;border-color:#636366;color:#8a8a8d}
+body.dark .prev-area .p-toc{background:#252527;box-shadow:0 8px 24px rgba(0,0,0,.4);border-color:rgba(255,255,255,.08)}
+body.dark .prev-area .p-toc h3{color:#f0f0f2}
+body.dark .prev-area .p-toc a{color:#0a84ff}
+body.dark .prev-area .p-ref{color:#0a84ff}
+body.dark .prev-area .p-para a{color:#0a84ff}
+body.dark .cpbar{border-color:rgba(255,255,255,.06);background:#2d2d30}
+body.dark .cpbar .info{color:#636366}
+body.dark .cbtn{background:#333338;border-color:rgba(255,255,255,.1);color:#98989d}
+body.dark .cbtn:hover{border-color:#0a84ff;color:#0a84ff;background:rgba(10,132,255,.1)}
+body.dark .bdg{background:#2d2d30;color:#8a8a8d;border-color:rgba(255,255,255,.06)}
+body.dark .bdg.im{background:rgba(217,119,6,.15);color:#d97706;border-color:rgba(217,119,6,.25)}
+body.dark .bdg.h2b{background:rgba(230,34,39,.15);color:#e62227;border-color:rgba(230,34,39,.2)}
+body.dark .pnl summary{color:#98989d}
+body.dark .pnl .pb{border-color:rgba(255,255,255,.06)}
+body.dark .cki .n{color:#f0f0f2}
+body.dark .ci-d span{color:#636366}
+body.dark .ci-d.on{border-color:rgba(255,255,255,.5)}
+body.dark .h2c{background:#2d2d30;border-color:rgba(255,255,255,.06)}
+body.dark .h2c .txt{color:#f0f0f2}
+body.dark .dm-btn{background:#2d2d30;border-color:rgba(255,255,255,.12);color:#98989d}
+body.dark .dm-btn:hover{background:rgba(255,255,255,.06)}
+body.dark .toast{background:rgba(245,245,247,.94);color:#1d1d1f}
+body.dark .foot{color:#636366}
+body.dark .foot kbd{background:#2d2d30;color:#98989d}
+body.dark .dbg pre{background:#2d2d30;color:#8a8a8d;border-color:rgba(255,255,255,.06)}
+
+/* --- Settings Section Layout --- */
+.settings-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:8px;
+  margin-bottom:4px;
+}
+.settings-header .ht{margin-bottom:0}
+.btn-reset{
+  font-size:11px;
+  color:var(--danger);
+  background:var(--danger-bg);
+  border:1px solid rgba(230,34,39,.2);
+  border-radius:var(--radius-sm);
+  padding:4px 10px;
+  cursor:pointer;
+  white-space:nowrap;
+  flex-shrink:0;
+  transition:all var(--transition);
+  font-family:inherit;
+}
+.btn-reset:hover{
+  background:rgba(230,34,39,.12);
+  border-color:var(--danger);
+}
+.warning-msg{
+  font-size:11px;
+  color:var(--warning);
+  margin-bottom:12px;
+  line-height:1.4;
+}
+.settings-section{
+  margin-bottom:14px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--border-light);
+}
+.settings-section:last-child{
+  border-bottom:none;
+  margin-bottom:0;
+  padding-bottom:0;
+}
+.settings-section.alt{
+  background:var(--surface-hover);
+  border-radius:var(--radius-sm);
+  padding:10px 12px;
+  margin-top:4px;
+}
+.settings-section-header{
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-tertiary);
+  margin-bottom:8px;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+}
+.setting-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:4px;
+}
+.trigger-input{
+  width:100%;
+  font-size:12px;
+  padding:7px 11px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--surface);
+  color:var(--text);
+  outline:none;
+  font-family:inherit;
+  transition:all var(--transition);
+  margin-top:4px;
+}
+.trigger-input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,113,227,.1);
+}
+.num-input{
+  width:60px;
+  font-size:12px;
+  padding:5px 8px;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  background:var(--surface);
+  color:var(--text);
+  outline:none;
+  font-family:inherit;
+  transition:all var(--transition);
+  text-align:center;
+}
+.num-input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,113,227,.1);
+}
+.hint-msg{
+  font-size:10px;
+  color:var(--text-tertiary);
+  margin-top:4px;
+  line-height:1.4;
+  margin-left:20px;
+}
+.warn-msg{
+  font-size:10px;
+  color:var(--danger);
+  margin-top:4px;
+  line-height:1.4;
+  margin-left:20px;
+}
 </style>
 </head>
 <body>
@@ -238,106 +1058,115 @@ textarea:focus{border-color:#0071e3;box-shadow:0 0 0 2px rgba(0,113,227,.12)}
 <details class="pnl">
   <summary>🖼️ ตั้งค่าตรวจจับภาพ + Art Brief</summary>
   <div class="pb">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">
-      <p class="ht" style="margin-bottom:0">พิมพ์คำ/สัญลักษณ์ที่นักเขียนใช้บอกตำแหน่งภาพเอง — เพิ่มคำใหม่ได้ตลอดถ้าเจอรูปแบบที่ระบบยังไม่รู้จัก</p>
-      <button type="button" id="btn-reset-imgsettings" style="font-size:10px;color:#e62227;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:3px 8px;cursor:pointer;white-space:nowrap;flex-shrink:0">↺ รีเซ็ตค่าเริ่มต้น</button>
+    <div class="settings-header">
+      <p class="ht">พิมพ์คำ/สัญลักษณ์ที่นักเขียนใช้บอกตำแหน่งภาพเอง — เพิ่มคำใหม่ได้ตลอดถ้าเจอรูปแบบที่ระบบยังไม่รู้จัก</p>
+      <button type="button" id="btn-reset-imgsettings" class="btn-reset">↺ รีเซ็ตค่าเริ่มต้น</button>
     </div>
-    <p class="ht" style="color:#d97706">⚠️ ถ้ารูปหาย/เกิน ก่อนอื่นเช็คว่า checkbox ด้านล่างถูกปิดไว้โดยไม่ตั้งใจหรือเปล่า (ค่าที่ติ๊กจะถูกจำไว้ในเบราว์เซอร์ทุกครั้ง) — กด "รีเซ็ตค่าเริ่มต้น" ได้ถ้าไม่แน่ใจ</p>
+    <p class="warning-msg">⚠️ ถ้ารูปหาย/เกิน ก่อนอื่นเช็คว่า checkbox ด้านล่างถูกปิดไว้โดยไม่ตั้งใจหรือเปล่า (ค่าที่ติ๊กจะถูกจำไว้ในเบราว์เซอร์ทุกครั้ง) — กด "รีเซ็ตค่าเริ่มต้น" ได้ถ้าไม่แน่ใจ</p>
 
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
-      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-hint" checked><div class="n">คำบอกตำแหน่งภาพ (กลุ่มที่ 1)</div></label>
-
-      <input type="text" id="d-hinttriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f;margin-left:20px" value="แทรกภาพ,แทรกรูป,แทรก pic,(วางรูป,(แทรกรูป,(วางภาพ">
-      <p class="ht" style="margin-left:20px">จับแบบ "มีคำนี้อยู่ในบรรทัด" (ไม่ต้องขึ้นต้นพอดี) — เช่น "แทรก pic ตรงนี้" ก็จับได้</p>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">
-      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-pic" checked><div class="n">มาร์กเกอร์รูปภาพ (กลุ่มที่ 2 — เช่น [รูปที่ N])</div></label>
-      <input type="text" id="d-pictriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f;margin-left:20px" value="รูปที่">
-      <p class="ht" style="margin-left:20px">ใช้แยกจากกลุ่มที่ 1 เพราะนับจำนวนแยกกัน — ถ้ามีมาร์กเกอร์เลข 3 อัน = 3 ภาพ</p>
-      <p class="ht" style="margin-left:20px;color:#dc2626">⚠️ ห้ามใส่ "ภาพที่" เพราะจะไปชนกับคำว่า "สุขภาพที่..." ซึ่งเป็นคำที่พบบ่อยมากในบทความสุขภาพ/สปา ทำให้ประโยคทั้งประโยคหายไปโดยไม่รู้ตัว — และระวังคำสั้นๆ ภาษาอังกฤษ เช่น "pic" เพราะจะไปจับคำอื่นที่มี pic ปนด้วยโดยไม่ตั้งใจ (เช่น topic, picture, typical) แนะนำให้ใช้คำที่เจาะจงกว่า เช่น "แทรก pic" แทน</p>
+    <!-- Section 1: กลุ่มที่ 1 - คำบอกตำแหน่งภาพ -->
+    <div class="settings-section">
+      <div class="settings-section-header">กลุ่มที่ 1 — คำบอกตำแหน่งภาพ</div>
+      <label class="cki"><input type="checkbox" id="d-hint" checked><div class="n">เปิดใช้งานคำบอกตำแหน่งภาพ</div></label>
+      <input type="text" id="d-hinttriggers" class="trigger-input" value="แทรกภาพ,แทรกรูป,แทรก pic,(วางรูป,(แทรกรูป,(วางภาพ">
+      <p class="hint-msg">จับแบบ "มีคำนี้อยู่ในบรรทัด" (ไม่ต้องขึ้นต้นพอดี) — เช่น "แทรก pic ตรงนี้" ก็จับได้</p>
     </div>
 
-    <div class="ckg">
-      <label class="cki"><input type="checkbox" id="d-url" checked><div class="n">ลิงก์ URL</div></label>
-      <label class="cki"><input type="checkbox" id="d-file" checked><div class="n">ชื่อไฟล์ภาพ</div></label>
+    <!-- Section 2: กลุ่มที่ 2 - มาร์กเกอร์รูปภาพ -->
+    <div class="settings-section">
+      <div class="settings-section-header">กลุ่มที่ 2 — มาร์กเกอร์รูปภาพ (เช่น [รูปที่ N])</div>
+      <label class="cki"><input type="checkbox" id="d-pic" checked><div class="n">เปิดใช้งานมาร์กเกอร์รูปภาพ</div></label>
+      <input type="text" id="d-pictriggers" class="trigger-input" value="รูปที่">
+      <p class="hint-msg">ใช้แยกจากกลุ่มที่ 1 เพราะนับจำนวนแยกกัน — ถ้ามีมาร์กเกอร์เลข 3 อัน = 3 ภาพ</p>
+      <p class="warn-msg">⚠️ ห้ามใส่ "ภาพที่" เพราะจะไปชนกับคำว่า "สุขภาพที่..." ทำให้ประโยคหายไป — และระวังคำสั้นๆ ภาษาอังกฤษ เช่น "pic" (จะจับ topic, picture, typical) แนะนำให้ใช้ "แทรก pic" แทน</p>
     </div>
-    <label class="cki" style="margin-top:4px"><input type="checkbox" id="d-barenum" checked>
-      <div>
-        <div class="n">ตัวเลขล้วนบรรทัดเดียว (เช่น 59, 77)</div>
-        <div class="d" style="font-size:10px;color:#aeaeb2">นับเป็นชื่อไฟล์ภาพแบบย่อ (ไม่มีนามสกุล .jpg) — ปิดได้ถ้างานไหนมีเลขหน้าเอกสารหลุดมาปน</div>
+
+    <!-- Section 3: URL + ไฟล์ภาพ -->
+    <div class="settings-section">
+      <div class="settings-section-header">ตรวจจับภาพจาก URL + ไฟล์</div>
+      <div class="ckg">
+        <label class="cki"><input type="checkbox" id="d-url" checked><div class="n">ลิงก์ URL</div></label>
+        <label class="cki"><input type="checkbox" id="d-file" checked><div class="n">ชื่อไฟล์ภาพ</div></label>
       </div>
-    </label>
-    <label class="cki" style="margin-top:4px;border-top:1px solid rgba(0,0,0,.04);padding-top:6px"><input type="checkbox" id="d-dedup" checked><div class="n">ตัด URL ซ้ำ</div></label>
+      <label class="cki"><input type="checkbox" id="d-barenum" checked>
+        <div>
+          <div class="n">ตัวเลขล้วนบรรทัดเดียว (เช่น 59, 77)</div>
+          <div class="d">นับเป็นชื่อไฟล์ภาพแบบย่อ (ไม่มีนามสกุล .jpg) — ปิดได้ถ้างานไหนมีเลขหน้าเอกสารหลุดมาปน</div>
+        </div>
+      </label>
+      <label class="cki"><input type="checkbox" id="d-dedup" checked><div class="n">ตัด URL ซ้ำ</div></label>
+    </div>
 
-    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
-      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-dropcapurl" checked>
+    <!-- Section 4: ตัดลิงก์แหล่งที่มา + More Info -->
+    <div class="settings-section alt">
+      <div class="settings-section-header">ตัดลิงก์แหล่งที่มาซ้ำ + ฝังลิงก์อัตโนมัติ</div>
+      <label class="cki"><input type="checkbox" id="d-dropcapurl" checked>
         <div>
           <div class="n">ตัดลิงก์แหล่งที่มาซ้ำหลังคำบรรยายภาพ</div>
-          <div class="d" style="font-size:10px;color:#aeaeb2">เช่น [รูปที่ 1] → คำบรรยาย/แหล่งที่มา → ลิงก์ Drive (ลิงก์นี้จะถูกตัดทิ้ง ไม่นับเป็นภาพเพิ่ม)</div>
+          <div class="d">เช่น [รูปที่ 1] → คำบรรยาย/แหล่งที่มา → ลิงก์ Drive (ลิงก์นี้จะถูกตัดทิ้ง ไม่นับเป็นภาพเพิ่ม)</div>
         </div>
       </label>
-    </div>
-
-    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
-      <label class="cki" style="padding-left:0"><input type="checkbox" id="d-moreinfolinks" checked>
+      <label class="cki"><input type="checkbox" id="d-moreinfolinks" checked>
         <div>
           <div class="n">ฝังลิงก์ให้ "More Info: ชื่อ1 , ชื่อ2" อัตโนมัติ</div>
-          <div class="d" style="font-size:10px;color:#aeaeb2">ดึง URL จากบรรทัด "(Tag IG: url)" / "(Tag FB: url)" ที่ตามมา แล้วจับคู่ชื่อกับลิงก์ให้เอง (เทียบชื่อคร่าวๆ กับ URL) — ตัดบรรทัด Tag ทิ้งหลังใช้แล้ว</div>
+          <div class="d">ดึง URL จากบรรทัด "(Tag IG: url)" / "(Tag FB: url)" ที่ตามมา แล้วจับคู่ชื่อกับลิงก์ให้เอง — ตัดบรรทัด Tag ทิ้งหลังใช้แล้ว</div>
         </div>
       </label>
     </div>
 
-    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
-      <p class="ht" style="margin-bottom:6px">🎨 Art Brief — ข้อความบรีฟอาร์ตที่ไม่ใช่เนื้อข่าว</p>
+    <!-- Section 5: Art Brief -->
+    <div class="settings-section alt">
+      <div class="settings-section-header">🎨 Art Brief — ข้ามข้อความบรีฟอาร์ต (เท็กลงภาพ / Text in pic)</div>
       <label class="cki"><input type="checkbox" id="d-artbrief" checked>
         <div>
-          <div class="n">ข้าม Art Brief (เท็กลงภาพ / Text in pic)</div>
-          <div class="d" style="font-size:10px;color:#aeaeb2">ข้ามตามจำนวนบรรทัดที่กำหนด ไม่สนใจภาษา/ตัวพิมพ์ใหญ่-เล็ก (รองรับทั้งบรีฟภาษาไทยและอังกฤษ)</div>
+          <div class="n">ข้าม Art Brief — ไม่นำไปฟอร์แมตเป็นเนื้อข่าว</div>
+          <div class="d">ข้ามตามจำนวนบรรทัดที่กำหนด ไม่สนใจภาษา/ตัวพิมพ์ใหญ่-เล็ก (รองรับทั้งบรีฟภาษาไทยและอังกฤษ)</div>
         </div>
       </label>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;padding-left:28px">
-        <label style="font-size:11px;color:#6e6e73;white-space:nowrap">ข้ามกี่บรรทัด:</label>
-        <input type="number" id="d-artlines" value="2" min="1" max="20" style="width:50px;font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:3px 6px;outline:none;font-family:inherit">
-        <span style="font-size:10px;color:#aeaeb2">บรรทัด (ไม่นับบรรทัดว่าง) — ปกติบรีฟมี 2 บรรทัด: ชื่อปก + วันที่/สถานที่</span>
+      <div class="setting-row">
+        <label style="font-size:12px;color:var(--text-secondary);white-space:nowrap">ข้ามกี่บรรทัด:</label>
+        <input type="number" id="d-artlines" value="2" min="1" max="20" class="num-input">
+        <span class="hint-msg">บรรทัด (ไม่นับบรรทัดว่าง) — ปกติบรีฟมี 2 บรรทัด: ชื่อปก + วันที่/สถานที่</span>
       </div>
-      <div style="margin-top:6px;padding-left:28px;display:flex;flex-direction:column;gap:4px">
-        <label style="font-size:11px;color:#6e6e73">คำ trigger (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
-        <input type="text" id="d-arttriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ,ตัดคำว่า">
-        <p class="ht">⚠️ ห้ามใส่คำที่ใช้แทรกรูป เช่น "แทรกภาพ / แทรกรูป" และ "แคปชั่น / บรรยาย / caption" (เป็นข้อความใต้ภาพ ต้องเก็บ)</p>
+      <div class="setting-row" style="flex-direction:column;gap:4px">
+        <label style="font-size:12px;color:var(--text-secondary)">คำ trigger (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
+        <input type="text" id="d-arttriggers" class="trigger-input" value="Text in pic,Text on pic,เท็กลงภาพ,เท็กซ์ลงภาพ,เทกซ์ลงภาพ,เท็กในภาพ,เท็กบนภาพ,ข้อความบนภาพ,โคว้ทในภาพ,ตัดคำว่า">
+        <p class="warn-msg">⚠️ ห้ามใส่คำที่ใช้แทรกรูป เช่น "แทรกภาพ / แทรกรูป" และ "แคปชั่น / บรรยาย / caption" (เป็นข้อความใต้ภาพ ต้องเก็บ)</p>
       </div>
     </div>
-    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
-      <p class="ht" style="margin-bottom:6px">📰 Newsletter Prelude — ตัดโซนเปิดเรื่อง (เท็กซ์ทำปก/บรีฟปก/Highlights)</p>
+
+    <!-- Section 6: Newsletter Prelude -->
+    <div class="settings-section alt">
+      <div class="settings-section-header">📰 Newsletter Prelude — ตัดโซนเปิดเรื่อง (เท็กซ์ทำปก/บรีฟปก/Highlights)</div>
       <label class="cki"><input type="checkbox" id="d-nlprelude" checked>
         <div>
           <div class="n">ตัดโซนเปิดเรื่อง Newsletter ทิ้งทั้งหมด</div>
-          <div class="d" style="font-size:10px;color:#aeaeb2">เจอ label เหล่านี้ → ตัดย่อหน้านั้นทิ้ง แล้วเผื่อข้ามย่อหน้าคั่นได้ตามจำนวนที่ตั้งไว้ ก่อนเจอ label ถัดไป</div>
+          <div class="d">เจอ label เหล่านี้ → ตัดย่อหน้านั้นทิ้ง แล้วเผื่อข้ามย่อหน้าคั่นได้ตามจำนวนที่ตั้งไว้ ก่อนเจอ label ถัดไป</div>
         </div>
       </label>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;padding-left:28px">
-        <label style="font-size:11px;color:#6e6e73;white-space:nowrap">ระยะเผื่อ:</label>
-        <input type="number" id="d-nltolerance" value="1" min="0" max="5" style="width:50px;font-size:12px;border:1px solid #d2d2d7;border-radius:6px;padding:3px 6px;outline:none;font-family:inherit">
-        <span style="font-size:10px;color:#aeaeb2">ย่อหน้า — จำนวนย่อหน้าไม่มี label คั่นได้ก่อนถือว่าจบโซน</span>
+      <div class="setting-row">
+        <label style="font-size:12px;color:var(--text-secondary);white-space:nowrap">ระยะเผื่อ:</label>
+        <input type="number" id="d-nltolerance" value="1" min="0" max="5" class="num-input">
+        <span class="hint-msg">ย่อหน้า — จำนวนย่อหน้าไม่มี label คั่นได้ก่อนถือว่าจบโซน</span>
       </div>
-      <div style="margin-top:6px;padding-left:28px;display:flex;flex-direction:column;gap:4px">
-        <label style="font-size:11px;color:#6e6e73">คำ label (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
-        <input type="text" id="d-nltriggers" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:">
-        <p class="ht">ใช้กับงานแบบ Newsletter เท่านั้น — ถ้าไม่มี label เหล่านี้ในต้นฉบับ ฟีเจอร์นี้จะไม่ทำงานเลย ไม่กระทบข่าวปกติ</p>
+      <div class="setting-row" style="flex-direction:column;gap:4px">
+        <label style="font-size:12px;color:var(--text-secondary)">คำ label (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
+        <input type="text" id="d-nltriggers" class="trigger-input" value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:">
+        <p class="hint-msg">ใช้กับงานแบบ Newsletter เท่านั้น — ถ้าไม่มี label เหล่านี้ในต้นฉบับ ฟีเจอร์นี้จะไม่ทำงานเลย ไม่กระทบข่าวปกติ</p>
       </div>
     </div>
-    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06)">
-      <p class="ht" style="margin-bottom:6px">📌 หัวข้อย่อย — ไม่ใส่ ## (เช่น วันที่, Label ข้อมูล)</p>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <label style="font-size:11px;color:#6e6e73">คำที่ขึ้นต้นแล้วถือเป็นหัวข้อย่อย (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
-        <input type="text" id="d-shlabels" style="width:100%;font-size:11px;border:1px solid #d2d2d7;border-radius:6px;padding:5px 8px;outline:none;font-family:inherit;color:#1d1d1f" value="Time:,When:,Where:,Admission:,Booking:,More Info:,Note:,Price:,Location:,Address:,Contact:,Hours:,Date:,Duration:,Fee:,Cost:,RSVP:,Tel:,Phone:,Email:,Website:,Schedule:,Program:,Map:,ตารางรอบฉาย,วันจันทร์,วันอังคาร,วันพุธ,วันพฤหัสบดี,วันศุกร์,วันเสาร์,วันอาทิตย์,ภาพ:,อ้างอิง:,ที่มา:,แหล่งที่มา:,เรียบเรียงจาก:,ขอบคุณข้อมูลจาก:,Source:,Reference:">
-        <p class="ht">บรรทัด <strong>**ข้อความ**</strong> ที่ขึ้นต้นด้วยคำเหล่านี้จะไม่ใส่ ## นำหน้า (ยังคงตัวหนา ** ไว้เหมือนเดิม) — เหมาะกับ Label ข้อมูล วันที่ ตาราง ที่ไม่ใช่หัวข้อหลัก</p>
+
+    <!-- Section 7: หัวข้อย่อย -->
+    <div class="settings-section alt">
+      <div class="settings-section-header">📌 หัวข้อย่อย — ไม่ใส่ ## (เช่น วันที่, Label ข้อมูล)</div>
+      <div class="setting-row" style="flex-direction:column;gap:4px">
+        <label style="font-size:12px;color:var(--text-secondary)">คำที่ขึ้นต้นแล้วถือเป็นหัวข้อย่อย (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
+        <input type="text" id="d-shlabels" class="trigger-input" value="Time:,When:,Where:,Admission:,Booking:,More Info:,Note:,Price:,Location:,Address:,Contact:,Hours:,Date:,Duration:,Fee:,Cost:,RSVP:,Tel:,Phone:,Email:,Website:,Schedule:,Program:,Map:,ตารางรอบฉาย,วันจันทร์,วันอังคาร,วันพุธ,วันพฤหัสบดี,วันศุกร์,วันเสาร์,วันอาทิตย์,ภาพ:,อ้างอิง:,ที่มา:,แหล่งที่มา:,เรียบเรียงจาก:,ขอบคุณข้อมูลจาก:,Source:,Reference:">
+        <p class="hint-msg">บรรทัด <strong>**ข้อความ**</strong> ที่ขึ้นต้นด้วยคำเหล่านี้จะไม่ใส่ ## นำหน้า (ยังคงตัวหนา ** ไว้เหมือนเดิม) — เหมาะกับ Label ข้อมูล วันที่ ตาราง ที่ไม่ใช่หัวข้อหลัก</p>
       </div>
     </div>
   </div>
-</details>
-
-<div class="grid">
+</details><div class="grid">
   <div class="col">
     <div class="col-lbl">ข้อความต้นฉบับ (Raw Text)</div>
     <textarea id="txt-raw" placeholder="วางข้อความจาก Line หรือ Google Docs ที่นี่... (รองรับการวางแบบคง Heading/ตัวหนาจาก Docs อัตโนมัติ)"></textarea>

@@ -1833,23 +1833,15 @@ function run(){
       }
 
       // ถ้า rich paste ฝังลิงก์มาให้แล้ว — ตรวจจับทั้งแบบปกติ ([text](url)) และแบบ @url: prefix
-      // พร้อม clean ** เกิน และแปลง @url: เป็นลิงก์จริง
-      const realLinkMatch=namesRaw.match(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/);
-      const atUrlMatch=namesRaw.match(/\[([^\]]+)\]\(@url:\s*`{0,1}(https?:\/\/[^`]+)`{0,1}\)/);
-      const hasRealLink=!!(realLinkMatch||atUrlMatch);
+      // แปลง @url: ทุกจุดในบรรทัด (ไม่ใช่แค่จุดแรก) เป็นลิงก์ปกติ + ล้าง ** ที่เกิน แล้วเก็บ "ทั้งบรรทัด" ไว้
+      // (สำคัญ: ต้องรองรับหลายชื่อ/หลายลิงก์ในบรรทัดเดียว เช่น "ชื่อ1 / ชื่อ2" ไม่ใช่แค่ชื่อแรก)
+      const cleanedNamesRaw=namesRaw
+        .replace(/\[([^\]]+)\]\(@url:\s*`{0,1}(https?:\/\/[^`)]+)`{0,1}\)/g,(m,text,url)=>`[${text}](${url})`)
+        .replace(/\*{3,}/g,'**');
+      const hasRealLink=/\[[^\]]+\]\(https?:\/\/[^)]+\)/.test(cleanedNamesRaw);
       if(hasRealLink){
-        // Clean ** เกินใน link text (เช่น [****text****] → [text])
-        const cleanText=(t)=>t.replace(/\*{2,}/g,'**').replace(/\*\*(.+)\*\*/g,(m,inner)=>inner);
-        let finalText,finalUrl;
-        if(realLinkMatch){
-          finalText=cleanText(realLinkMatch[1]);
-          finalUrl=realLinkMatch[0].match(/\(https?:\/\/[^)]+\)/)[0].slice(1,-1);
-        }else{
-          finalText=cleanText(atUrlMatch[1]);
-          finalUrl=atUrlMatch[0].match(/`?(https?:\/\/[^`]+)`?/)[1];
-        }
-        bodyLines.push(`**More Info:** [${finalText}](${finalUrl})`);
-        logs.push(`  🔗 MoreInfo(L${i}): มีลิงก์ฝังจาก rich paste — ทำความสะอาดแล้ว (${finalText} → ${finalUrl}), ตัดบรรทัด (Tag...) ที่เหลือทิ้ง ${tagUrls.length} เส้น`);
+        bodyLines.push(`**More Info:** ${cleanedNamesRaw}`);
+        logs.push(`  🔗 MoreInfo(L${i}): มีลิงก์ฝังจาก rich paste (รองรับ @url: ด้วย) — เก็บทุกชื่อ/ลิงก์ในบรรทัดไว้ครบ, ตัดบรรทัด (Tag...) ที่เหลือทิ้ง ${tagUrls.length} เส้น`);
         i=j-1;
         lastE=false;
         continue;

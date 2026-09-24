@@ -1927,7 +1927,9 @@ function run(){
     let isBH=ln.startsWith('• **')&&ln.endsWith('**')&&!ln.startsWith('• **ภาพ:**');
     // เช็คว่าเป็น "อีโมจิ/สัญลักษณ์ + **ข้อความ**" เช่น "🟡 **หัวข้อ**" (นักเขียนบางคนใช้อีโมจิสีแทน bullet)
     const emojiHeadingMatch=(!isHd&&!isBH)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s*\*\*(.+)\*\*$/u):null;
-    let isEmojiH=!!emojiHeadingMatch;
+    // ยังรองรับอีโมจิ + ข้อความปกติ (ไม่มี **) เช่น "▪️ผลักดันโควตาสลากฯ..." ด้วย
+    const emojiPlainMatch=(!isHd&&!isBH&&!emojiHeadingMatch)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s+(.+)$/u):null;
+    let isEmojiH=!!emojiHeadingMatch||!!emojiPlainMatch;
     if(flushedN>0&&!isHd&&!isBH&&!isEmojiH&&dDropCapUrl.checked){
       awaitingSourceURL=true;
       logs.push(`  📎 Caption candidate(L${i}): "${ln.substring(0,40)}" — ถ้าบรรทัดถัดไปเป็นลิงก์จะตัดทิ้ง`);
@@ -1948,7 +1950,12 @@ function run(){
         ln='## '+strippedBullet;
       }
     }else if(isEmojiH){
-      const inner=emojiHeadingMatch[1];
+      let inner;
+      if(emojiHeadingMatch){
+        inner=emojiHeadingMatch[1];
+      }else{
+        inner=emojiPlainMatch[1];
+      }
       if(isSubLabel(inner)){
         logs.push(`  📌 SubLabel emoji(L${i}): "${inner.substring(0,40)}" → ไม่ใส่ ##`);
       }else{

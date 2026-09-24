@@ -1553,6 +1553,10 @@ const refDom=['thestandard.co','bbc.com','reuters.com','apnews.com','nytimes.com
 const isRef=url=>{try{const h=new URL(url).hostname.replace(/^www\./,'');return refDom.some(d=>h===d||h.endsWith('.'+d))}catch{return false}};
 
 // === MAIN ===
+
+function codepointLength(cp){
+  return cp<=0xFFFF?1:2;
+}
 function run(){
   const raw=$('txt-raw').value,logs=[];
   if(!raw.trim()){outputs={formatted:'',wphtml:''};parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};$('st-ch').textContent='0 อักษร';$('st-img').style.display='none';$('st-h2').style.display='none';$('st-dup').style.display='none';$('out-raw').value='';$('out-html').textContent='';$('out-prev').innerHTML='<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div><small>จะแสดง Preview ให้ทันที</small></div>';$('dbg-log').textContent='';return}
@@ -1929,9 +1933,9 @@ function run(){
     const emojiHeadingMatch=(!isHd&&!isBH)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s*\*\*(.+)\*\*$/u):null;
     // ยังรองรับอีโมจิ + ข้อความปกติ (ไม่มี **) เช่น "▪️ผลักดันโควตาสลากฯ..." ด้วย
     // โดยถ้าอีโมจิติดกับข้อความโดยไม่มีช่องว่าง (เช่น "▪️ผลักดัน...") ก็จับได้
-    const emojiPlainMatch=(!isHd&&!isBH&&!emojiHeadingMatch)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+[\s\u00A0]*(.+)$/u):null;
+
     // ยังรองรับอีโมจิ + ข้อความปกติ (ไม่มี **) เช่น "▪️ผลักดันโควตาสลากฯ..." ด้วย
-    const emojiPlainMatch=(!isHd&&!isBH&&!emojiHeadingMatch)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s+(.+)$/u):null;
+    const emojiPlainMatch=(!isHd&&!isBH&&!emojiHeadingMatch)?ln.match(/^\s*[\p{Extended_Pictographic}\uFE0F\u200D]+\s*(.+)$/u):null;
     let isEmojiH=!!emojiHeadingMatch||!!emojiPlainMatch;
     if(flushedN>0&&!isHd&&!isBH&&!isEmojiH&&dDropCapUrl.checked){
       awaitingSourceURL=true;
@@ -1958,6 +1962,20 @@ function run(){
         inner=emojiHeadingMatch[1];
       }else{
         inner=emojiPlainMatch[1];
+        // ตัดเศษที่ติดมาจากอีโมจิ multi-codepoint (เช่น ▪️ = U+25AA + U+FE0F)
+        // โดยตัดเฉพาะ non-spacing mark และ format character ที่ตามหลังอีโมจิหลัก
+        let start=0;
+        while(start<inner.length){
+          const cp=inner.codePointAt(start);
+          // U+FE0F (variation selector), U+200D (ZWJ), หรือ combining mark U+0300-U+036F
+          if(cp===0xFE0F||cp===0x200D||(cp>=0x0300&&cp<=0x036F)){
+            start+=cp<=0xFFFF?1:2;
+          }else{
+            break;
+          }
+        }
+        inner=start>0?inner.substring(start):inner;
+        }
       }
       if(isSubLabel(inner)){
         logs.push(`  📌 SubLabel emoji(L${i}): "${inner.substring(0,40)}" → ไม่ใส่ ##`);

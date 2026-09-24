@@ -1928,6 +1928,9 @@ function run(){
     // เช็คว่าเป็น "อีโมจิ/สัญลักษณ์ + **ข้อความ**" เช่น "🟡 **หัวข้อ**" (นักเขียนบางคนใช้อีโมจิสีแทน bullet)
     const emojiHeadingMatch=(!isHd&&!isBH)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s*\*\*(.+)\*\*$/u):null;
     // ยังรองรับอีโมจิ + ข้อความปกติ (ไม่มี **) เช่น "▪️ผลักดันโควตาสลากฯ..." ด้วย
+    // โดยถ้าอีโมจิติดกับข้อความโดยไม่มีช่องว่าง (เช่น "▪️ผลักดัน...") ก็จับได้
+    const emojiPlainMatch=(!isHd&&!isBH&&!emojiHeadingMatch)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+[\s\u00A0]*(.+)$/u):null;
+    // ยังรองรับอีโมจิ + ข้อความปกติ (ไม่มี **) เช่น "▪️ผลักดันโควตาสลากฯ..." ด้วย
     const emojiPlainMatch=(!isHd&&!isBH&&!emojiHeadingMatch)?ln.match(/^[\p{Extended_Pictographic}\uFE0F\u200D]+\s+(.+)$/u):null;
     let isEmojiH=!!emojiHeadingMatch||!!emojiPlainMatch;
     if(flushedN>0&&!isHd&&!isBH&&!isEmojiH&&dDropCapUrl.checked){

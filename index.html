@@ -269,6 +269,22 @@ body{
 }
 
 /* --- H2 Chips --- */
+.h2pick{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:10px 12px;margin-top:8px}
+.h2pick-hd{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:#6e6e73;margin-bottom:4px}
+.h2pick-hint{font-size:10px;color:#aeaeb2;margin-bottom:6px;line-height:1.5}
+.h2p-row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid rgba(0,0,0,.05);background:#f8f8f8;margin-bottom:4px;transition:.15s}
+.h2p-row:hover{background:#f0f0f2}
+.h2p-row input{accent-color:#e62227;flex-shrink:0}
+.h2p-num{font-family:monospace;font-size:10px;color:#e62227;min-width:18px}
+.h2p-txt{flex:1;color:#1d1d1f;overflow-wrap:anywhere}
+.h2p-tag{font-size:9px;color:#aeaeb2;white-space:nowrap}
+.h2p-row.off{opacity:.5}
+.h2p-row.off .h2p-txt{text-decoration:line-through}
+body.dark .h2pick{background:#2c2c2e;border-color:rgba(255,255,255,.1)}
+body.dark .h2pick-hd{color:#98989d}
+body.dark .h2p-row{background:#3a3a3c;border-color:rgba(255,255,255,.06)}
+body.dark .h2p-row:hover{background:#48484a}
+body.dark .h2p-txt{color:#f5f5f7}
 .h2-chips{
   display:flex;
   flex-direction:column;
@@ -1298,6 +1314,11 @@ body.dark .dbg pre{background:#2d2d30;color:#8a8a8d;border-color:rgba(255,255,25
     <div class="col-lbl">ข้อความต้นฉบับ (Raw Text)</div>
     <textarea id="txt-raw" placeholder="วางข้อความจาก Line หรือ Google Docs ที่นี่... (รองรับการวางแบบคง Heading/ตัวหนาจาก Docs อัตโนมัติ)"></textarea>
     <p style="font-size:10px;color:#aeaeb2;margin-top:2px">💡 คัดลอกจาก Google Docs แล้ววางได้เลย — ระบบจะจับ Heading 2/3 และตัวหนาให้อัตโนมัติ (ไม่รองรับการวางแค่ลิงก์ไฟล์ เพราะเบราว์เซอร์ดึงเนื้อหาจาก Docs โดยตรงไม่ได้)</p>
+    <div class="h2pick" id="h2-picker" style="display:none">
+      <div class="h2pick-hd"><span>☑️ หัวข้อที่ตรวจพบ</span><span class="bdg" id="h2-picker-count">0</span></div>
+      <div class="h2pick-hint">ติ๊กช่องหน้าหัวข้อที่ <strong>ไม่ต้องการให้เป็นหัวข้อ/สารบัญ</strong> — ข้อความจะยังอยู่ในบทความเป็นย่อหน้าตัวหนาธรรมดา (ติ๊กออกเพื่อกลับมาเป็นหัวข้อ)</div>
+      <div id="h2-picker-list"></div>
+    </div>
   </div>
 
   <div class="col">
@@ -1350,6 +1371,10 @@ body.dark .dbg pre{background:#2d2d30;color:#8a8a8d;border-color:rgba(255,255,25
     </div>
   </div>
 
+  <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <button type="button" class="cbtn" id="btn-report" onclick="copyReport(this)">📋 คัดลอกรายงานปัญหา</button>
+    <span style="font-size:10px;color:#aeaeb2">ผลลัพธ์ไม่ตรงที่ต้องการ? กดปุ่มนี้แล้ววางส่งให้ผู้ดูแล — รวมต้นฉบับ ผลลัพธ์ การตั้งค่า และ Debug Log ไว้ในที่เดียว</span>
+  </div>
   <details class="dbg" style="grid-column:1/-1"><summary>🔍 Debug Log</summary><pre id="dbg-log"></pre></details>
   <div class="foot">💡 <kbd>Ctrl/Cmd+Enter</kbd> = Copy แท็บที่เปิดอยู่ &nbsp;|&nbsp; วางแบบล้างฟอร์แมต = <kbd>Ctrl/Cmd+Shift+V</kbd></div>
 </div>
@@ -1527,7 +1552,10 @@ function htmlPasteToMarkedText(html, isContentMode){
 let mode='full',ciCat='NEWS',activeTab='raw';
 let outputs={formatted:'',wphtml:''};
 let parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};
-let removedH2=new Set();
+let removedH2=new Set(); // (เดิม) เลิกใช้แล้ว คงไว้เป็นค่าว่างเพื่อไม่ให้โค้ดเก่าพัง
+// หัวข้อที่ผู้ใช้ติ๊ก "ตัดออก" — เก็บด้วย "ข้อความหัวข้อ#ลำดับที่ซ้ำ" (ไม่ใช่ตำแหน่ง) เพื่อให้ติ๊กค้างอยู่แม้แก้ข้อความอื่นต่อ
+const excludedHeads=new Set();
+let allHeadItems=[]; // หัวข้อที่ตรวจพบทั้งหมด [{text,key,excluded}] (รวมที่ถูกตัดออก)
 let userChangedCi=false; // ตั้งค่าเมื่อผู้ใช้กดปุ่ม CI ด้วยตนเอง — ป้องกันไม่ให้ detect จาก HTML overwrite
 
 const CI_S={
@@ -1590,7 +1618,7 @@ function codepointLength(cp){
 }
 function run(){
   const raw=$('txt-raw').value,logs=[];
-  if(!raw.trim()){outputs={formatted:'',wphtml:''};parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};$('st-ch').textContent='0 อักษร';$('st-img').style.display='none';$('st-h2').style.display='none';$('st-dup').style.display='none';$('out-raw').value='';$('out-html').textContent='';$('out-prev').innerHTML='<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div><small>จะแสดง Preview ให้ทันที</small></div>';$('dbg-log').textContent='';return}
+  if(!raw.trim()){excludedHeads.clear();allHeadItems=[];renderHeadPicker();outputs={formatted:'',wphtml:''};parsed={headline:'',author:'',photographer:'',bodyLines:[],headings:[],totalImgs:0};$('st-ch').textContent='0 อักษร';$('st-img').style.display='none';$('st-h2').style.display='none';$('st-dup').style.display='none';$('out-raw').value='';$('out-html').textContent='';$('out-prev').innerHTML='<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div><small>จะแสดง Preview ให้ทันที</small></div>';$('dbg-log').textContent='';return}
 
   const lines=raw.split('\n');
 
@@ -2080,6 +2108,25 @@ function run(){
   collectDupWarnings(fileSeenMap,'ไฟล์');
   collectDupWarnings(urlSeenMap,'ลิงก์');
 
+  // รายการหัวข้อที่ตรวจพบทั้งหมด + หัวข้อที่ติ๊ก "ตัดออก" → กลายเป็นย่อหน้าตัวหนาธรรมดา (ไม่นับเป็นหัวข้อ ไม่เข้า TOC/<h2>)
+  {
+    const seenCount={};
+    allHeadItems=[];
+    for(let k=0;k<bodyLines.length;k++){
+      const hm0=bodyLines[k].match(/^## \*\*(.+)\*\*$/);
+      if(!hm0)continue;
+      const t0=hm0[1];
+      seenCount[t0]=(seenCount[t0]||0)+1;
+      const key0=t0+'#'+seenCount[t0];
+      const ex0=excludedHeads.has(key0);
+      allHeadItems.push({text:t0,key:key0,excluded:ex0});
+      if(ex0){bodyLines[k]='**'+t0+'**';logs.push(`  ☑️ ExcludeHeading: "${t0.substring(0,40)}" → ไม่นับเป็นหัวข้อ`);}
+    }
+    // ล้างค่าติ๊กของหัวข้อที่ไม่มีอยู่แล้ว (เช่นผู้ใช้ลบ/แก้ข้อความหัวข้อนั้น)
+    const liveKeys=new Set(allHeadItems.map(h=>h.key));
+    excludedHeads.forEach(k=>{if(!liveKeys.has(k))excludedHeads.delete(k)});
+  }
+
   // Extract headings
   const headings=[];for(const l of bodyLines){const m=l.match(/^## \*\*(.+)\*\*$/);if(m)headings.push(m[1])}
 
@@ -2175,7 +2222,8 @@ ${items}
   const ch=fmt.length,wo=fmt.trim().split(/\s+/).filter(w=>w.length>0).length;
   $('st-ch').textContent=ch.toLocaleString()+' อักษร / '+wo.toLocaleString()+' คำ';
   if(totalImgs>0){$('st-img').textContent='🖼 '+totalImgs;$('st-img').style.display=''}else $('st-img').style.display='none';
-  if(headings.length>0){$('st-h2').textContent='H2: '+activeH2.length+'/'+headings.length;$('st-h2').style.display=''}else $('st-h2').style.display='none';
+  if(allHeadItems.length>0){$('st-h2').textContent='H2: '+activeH2.length+'/'+allHeadItems.length;$('st-h2').style.display=''}else $('st-h2').style.display='none';
+  renderHeadPicker();
   if(dupWarnings.length>0){
     $('st-dup').textContent='⚠️ ซ้ำ '+dupWarnings.length;
     $('st-dup').title=dupWarnings.join('\n');
@@ -2198,13 +2246,12 @@ function renderPreview(){
   const activeH2=headings.filter((_,i)=>!removedH2.has(i));
   const pv=$('out-prev');let html='';
 
-  // H2 toggle chips
-  if(headings.length>0){
+  // H2 toggle chips (ใช้สถานะเดียวกับกล่องใต้ต้นฉบับ)
+  if(allHeadItems.length>0){
     html+='<div class="h2-chips">';
-    html+='<div style="font-size:10px;color:#aeaeb2;margin-bottom:2px;font-weight:600">H2 ในบทความ — กด ✕ เพื่อข้ามจาก TOC</div>';
-    headings.forEach((h,i)=>{
-      const off=removedH2.has(i);
-      html+=`<div class="h2c ${off?'off':''}"><span class="num">${String(i+1).padStart(2,'0')}</span><span class="txt">${esc(h)}</span><span class="tag">${off?'ข้าม':'section'+(i+1)}</span><button class="rm" onclick="toggleH2(${i})">${off?'+':'✕'}</button></div>`;
+    html+='<div style="font-size:10px;color:#aeaeb2;margin-bottom:2px;font-weight:600">หัวข้อในบทความ — กด ✕ เพื่อตัดออก (ไม่นับเป็นหัวข้อ/สารบัญ)</div>';
+    allHeadItems.forEach((h,i)=>{
+      html+=`<div class="h2c ${h.excluded?'off':''}"><span class="num">${String(i+1).padStart(2,'0')}</span><span class="txt">${esc(h.text)}</span><span class="tag">${h.excluded?'ตัดออก':'H2'}</span><button class="rm" onclick="toggleHead(${i})">${h.excluded?'+':'✕'}</button></div>`;
     });
     html+='</div>';
   }
@@ -2240,10 +2287,22 @@ function renderPreview(){
   pv.innerHTML=html||'<div class="empty-p"><div style="font-size:28px;opacity:.4">✦</div><div>วางข้อความด้านซ้าย</div></div>';
 }
 
-function toggleH2(idx){
-  if(removedH2.has(idx))removedH2.delete(idx);else removedH2.add(idx);
-  // Rebuild outputs with updated removedH2
-  rebuildOutputs();
+function toggleHead(i){
+  const h=allHeadItems[i];if(!h)return;
+  if(excludedHeads.has(h.key))excludedHeads.delete(h.key);else excludedHeads.add(h.key);
+  run();
+}
+function toggleH2(idx){toggleHead(idx)} // เผื่อโค้ดเก่าเรียก
+
+// กล่องรายการหัวข้อใต้ช่องต้นฉบับ: ติ๊ก = ตัดออก (ไม่นับเป็นหัวข้อ)
+function renderHeadPicker(){
+  const box=$('h2-picker'),list=$('h2-picker-list');
+  if(!box||!list)return;
+  if(!allHeadItems.length){box.style.display='none';list.innerHTML='';return}
+  box.style.display='';
+  const nEx=allHeadItems.filter(h=>h.excluded).length;
+  $('h2-picker-count').textContent=(allHeadItems.length-nEx)+'/'+allHeadItems.length+' หัวข้อ';
+  list.innerHTML=allHeadItems.map((h,i)=>`<label class="h2p-row${h.excluded?' off':''}"><input type="checkbox" data-i="${i}"${h.excluded?' checked':''}><span class="h2p-num">${String(i+1).padStart(2,'0')}</span><span class="h2p-txt">${esc(h.text)}</span><span class="h2p-tag">${h.excluded?'ตัดออกแล้ว':'ติ๊กเพื่อตัดออก'}</span></label>`).join('');
 }
 
 function rebuildOutputs(){
@@ -2309,7 +2368,7 @@ function rebuildOutputs(){
     outputs.wphtml=wp.join('\n');
   }
 
-  $('st-h2').textContent='H2: '+activeH2.length+'/'+headings.length;
+  $('st-h2').textContent='H2: '+activeH2.length+'/'+Math.max(allHeadItems.length,headings.length);
   $('out-html').textContent=outputs.wphtml;
   renderPreview();
 }
@@ -2338,6 +2397,29 @@ function doCopyActive(btn){
   const cfg=TAB_COPY_MAP[activeTab];
   if(!cfg.which)return; // Preview tab has nothing to copy
   doCopy(cfg.which,cfg.label,btn);
+}
+// รวมข้อมูลทั้งหมดที่ใช้ไล่หาสาเหตุเวลาผลลัพธ์ไม่ตรง: ต้นฉบับ + ผลลัพธ์ + ค่าตั้งค่า + Debug Log (ก๊อปปุ่มเดียว)
+function buildReport(){
+  const cfg={
+    โหมด:mode,สีCI:ciCat,หมวด:$('inp-cat').value,Prefix:$('inp-pfx').value,
+    ตรวจจับภาพ:{hint:dH.checked,hint_words:dHT.value,marker:dP.checked,marker_words:dPT.value,url:dU.checked,filename:dF.checked,bare_number:dBareNum.checked,dedup_url:dD.checked,drop_caption_url:dDropCapUrl.checked},
+    ArtBrief:{on:dAB.checked,skip_lines:dAL.value,triggers:dAT.value},
+    หัวข้อย่อย:{on:dSHon.checked,words:dSH.value},
+    ข้ามตัวหนา:{on:dSBOn.checked,words:dSkipBold.value},
+    NewsletterPrelude:{on:dNLP.checked,tolerance:dNLTol.value,labels:dNLT.value},
+    MoreInfoLinks:dMoreInfoLinks.checked
+  };
+  const L=(t)=>'\n===== '+t+' =====\n';
+  return 'News Formatter — รายงานปัญหา ('+new Date().toLocaleString('th-TH')+')'
+    +L('ตั้งค่า')+JSON.stringify(cfg,null,1)
+    +L('ต้นฉบับ (Raw Text)')+$('txt-raw').value
+    +L('ผลลัพธ์ (ข้อความจัดแล้ว)')+(outputs.formatted||'')
+    +L('Debug Log')+($('dbg-log').textContent||'(ว่าง)');
+}
+function copyReport(btn){
+  const text=buildReport();
+  const ok=()=>{showToast('✅ คัดลอกรายงานแล้ว — วางส่งได้เลย');if(btn){const orig=btn.innerHTML;btn.classList.add('ok');btn.textContent='✅ คัดลอกแล้ว';setTimeout(()=>{btn.classList.remove('ok');btn.innerHTML=orig},1500)}};
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(ok).catch(()=>{fbCopy(text);ok()});else{fbCopy(text);ok()}
 }
 function fbCopy(t){const a=document.createElement('textarea');a.value=t;Object.assign(a.style,{position:'fixed',top:0,left:0,opacity:0});document.body.appendChild(a);a.focus();a.select();try{document.execCommand('copy')}catch{}document.body.removeChild(a)}
 function showToast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
@@ -2431,6 +2513,12 @@ function doCopyTags(btn){
 $('tag-raw').addEventListener('input',runTagCleaner);
 
 // === EVENTS ===
+$('h2-picker-list').addEventListener('change',e=>{
+  const cb=e.target.closest('input[data-i]');if(!cb)return;
+  toggleHead(parseInt(cb.dataset.i,10));
+});
+// วางเนื้อหาใหม่ = เริ่มบทความใหม่ → ล้างค่าติ๊กเดิม (พิมพ์แก้ต่อไม่ล้าง)
+$('txt-raw').addEventListener('paste',()=>excludedHeads.clear());
 let draftSaveTimer=null;
 $('txt-raw').addEventListener('input',()=>{
   removedH2.clear();run();
@@ -2453,7 +2541,7 @@ $('txt-raw').addEventListener('paste',(e)=>{
   const before=ta.value.slice(0,start),after=ta.value.slice(end);
   ta.value=before+converted+after;
   ta.selectionStart=ta.selectionEnd=start+converted.length;
-  removedH2.clear();run();
+  removedH2.clear();excludedHeads.clear();run();
   showToast('✨ วางจาก Google Docs แล้ว — จับ Heading/ตัวหนาให้อัตโนมัติ');
 });
 [$('inp-cat'),$('inp-pfx'),$('inp-author'),$('inp-toc')].forEach(el=>{el.addEventListener('input',saveS);el.addEventListener('change',saveS)});
@@ -2468,7 +2556,7 @@ $('d-pictriggers').addEventListener('input',saveS);
 $('d-nlprelude').addEventListener('change',saveS);
 $('d-nltolerance').addEventListener('input',saveS);
 $('d-nltriggers').addEventListener('input',saveS);
-$('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();run();try{localStorage.removeItem('nf_draft');localStorage.removeItem('nf_draft_time')}catch(e){}}};
+$('btn-clear').onclick=()=>{if(confirm('ล้างทั้งหมด?')){$('txt-raw').value='';removedH2.clear();excludedHeads.clear();run();try{localStorage.removeItem('nf_draft');localStorage.removeItem('nf_draft_time')}catch(e){}}};
 
 // Dark mode
 function initDark(){const s=sG('nf_dark');const p=window.matchMedia('(prefers-color-scheme:dark)').matches;const dark=s?s==='1':p;document.body.classList.toggle('dark',dark);$('dm-btn').textContent=dark?'☀️':'🌙'}

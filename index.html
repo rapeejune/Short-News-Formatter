@@ -1759,7 +1759,7 @@ function run(){
 
 
     if(mode==='full'){
-      if(!hFound&&ln!==''){headline=ln;hFound=true;continue}if(!hFound)continue;
+      if(!hFound&&ln!==''){headline=ln.replace(/^#{1,6}\s+/,'');hFound=true;continue}if(!hFound)continue;
       if(!inBody&&(ln.startsWith('เรื่อง:')||ln.startsWith('เรื่อง :'))){author=ln.replace(/^เรื่อง\s*:/,'').trim();continue}
       if(!inBody&&(ln.startsWith('ภาพ:')||ln.startsWith('ภาพ :'))){
         const photoVal=ln.replace(/^ภาพ\s*:/,'').trim();
@@ -1796,6 +1796,19 @@ function run(){
     // ปรับสถานะโซนอ้างอิง: ตั้งค่าเมื่อเจอ label, ปิดเมื่อเจอข้อความปกติที่ไม่ใช่ bullet
     if(!isBulletLine&&ln!==''){
       inRefSection=isRefLabelLine(plain);
+    }
+
+    // หัวข้อที่นักเขียนพิมพ์ "## ข้อความ" มาเอง (ไม่มี ** ครอบ) → แปลงเป็นรูปแบบมาตรฐาน "## **ข้อความ**"
+    // เพื่อให้ TOC / <h2> ใน WordPress จับได้ (ถือว่าตั้งใจให้เป็นหัวข้อ จึงไม่เช็ค sub-label)
+    const hashHeadMatch=ln.match(/^##\s+(?!#)(.+)$/);
+    if(hashHeadMatch){
+      const innerH=hashHeadMatch[1].replace(/\*\*/g,'').trim();
+      if(innerH){
+        flush();
+        bodyLines.push('## **'+innerH+'**');
+        logs.push(`  🔖 HashHeading(L${i}): "${innerH.substring(0,40)}" → ## **...**`);
+        continue;
+      }
     }
 
     // ภาพ: detection (ทั้ง full และ content mode)
@@ -1884,7 +1897,7 @@ function run(){
     }
 
     // === Image Detection ก่อน Art Brief เสมอ ===
-    let iH=isHint(plain),iP=isPic(ln),iR=isUrlC&&isRef(plain),iU=!iR&&isImgU(isUrlC),iF=isFn(plain);
+    let iH=isHint(plain),iP=isPic(ln)&&!isArtBrief(plain),iR=isUrlC&&isRef(plain),iU=!iR&&isImgU(isUrlC),iF=isFn(plain);
     if(iH||iP||iU||iF){
       if(!clOn)clSt=i;clOn=true;
       if(iH)clHint++;if(iP){clPic++;lastMarkerText=ln;}

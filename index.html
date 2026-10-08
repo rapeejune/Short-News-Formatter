@@ -1462,6 +1462,26 @@ function htmlPasteToMarkedText(html, isContentMode){
     const plainText=el.textContent.trim();
     if(!plainText&&!imgs.length)return; // บล็อกว่างจริงๆ ไม่มีทั้งข้อความและรูป
 
+    // รายการเลขข้อ (<ol>): คงเลขไว้เป็น "N. ข้อความ" — Google Docs มักแยกแต่ละข้อเป็น <ol> ของตัวเอง (ทุกข้อเลยเป็น 1.)
+    // ซึ่งจะถูกรันเลขใหม่ให้เรียงต่อกันตอน run() อีกชั้นหนึ่ง
+    {
+      const liEl=(tag==='li')?el:el.closest('li');
+      const listEl=liEl?liEl.parentElement:null;
+      const liStyle=liEl?((liEl.getAttribute('style')||'')+' '+(listEl&&listEl.getAttribute?(listEl.getAttribute('style')||''):'')):'';
+      const isOrdered=!!listEl&&(listEl.tagName.toLowerCase()==='ol'||/list-style-type:\s*(decimal|decimal-leading-zero)/i.test(liStyle));
+      if(isOrdered&&plainText){
+        const isFirstBlockOfItem=(tag==='li')||liEl.querySelector('p,div,h1,h2,h3,h4,h5,h6')===el;
+        if(isFirstBlockOfItem){
+          const startN=parseInt(listEl.getAttribute('start'),10)||1;
+          const idx=Array.from(listEl.children).filter(x=>x.tagName.toLowerCase()==='li').indexOf(liEl);
+          lines.push((startN+Math.max(idx,0))+'. '+pasteInlineText(el).trim());
+          lines.push('');
+          imgs.forEach(()=>{lines.push('แทรกภาพ');lines.push('')});
+          return;
+        }
+      }
+    }
+
     if(tag==='li'){
       if(plainText)lines.push('• '+plainText);
       imgs.forEach(()=>lines.push('แทรกภาพ'));
@@ -1984,14 +2004,38 @@ function run(){
       if(isSubLabel(inner)){
         logs.push(`  📌 SubLabel emoji(L${i}): "${inner.substring(0,40)}" → ไม่ใส่ ##`);
       }else{
-        // ตัดอีโมจิออก แปลงเป็นรูปแบบมาตรฐาน "## **ข้อความ**" เพื่อให้ TOC/WordPress H2 จับได้ปกติ
-        ln='## **'+inner+'**';
-        logs.push(`  🟡 EmojiHeading(L${i}): "${inner.substring(0,40)}" → ## **...**`);
+        // เก็บอีโมจิไว้ (ไม่ตัดทิ้ง) โดยใส่ไว้ข้างหน้าข้อความใน ** เดียวกัน → "## **🟡 ข้อความ**"
+        // ยังตรงรูปแบบ "## **...**" ที่ TOC/WordPress H2 อ่านได้ปกติ
+        const emojiPrefixM=ln.match(/^\s*([\p{Extended_Pictographic}\p{Emoji_Modifier}\uFE0F\u200D\u20E3]+)/u);
+        const emojiPrefix=emojiPrefixM?emojiPrefixM[1]:'';
+        // ตัดข้อความหลังอีโมจิชุดเต็ม (รวม skin tone / ZWJ) เพื่อไม่ให้ตัวปรับอีโมจิหลุดซ้ำเข้าไปในข้อความ
+        const textAfterEmoji=emojiPrefix?ln.slice(ln.indexOf(emojiPrefix)+emojiPrefix.length):inner;
+        const cleanInner=textAfterEmoji.replace(/\*\*/g,'').trim(); // กัน ** ซ้อนใน ** (เช่น "📍 **Where:** x")
+        ln='## **'+(emojiPrefix?emojiPrefix+' ':'')+cleanInner+'**';
+        logs.push(`  🟡 EmojiHeading(L${i}): "${emojiPrefix} ${cleanInner.substring(0,40)}" → ## **อีโมจิ + ข้อความ**`);
       }
     }
     bodyLines.push(ln);
   }
   flush();
+
+  // รันเลขข้อ: รายการที่ขึ้นต้น "1. " ซ้ำทุกข้อ (Google Docs ให้แบบนี้เวลา copy เป็น plain text) → 1. 2. 3. ...
+  // ถือเป็นชุดเดียวกันตราบใดที่ข้อถัดไปตามมาติดกัน (บรรทัดว่างคั่นได้) เจอบรรทัดอื่นคั่น = เริ่มชุดใหม่
+  {
+    let expectN=null;
+    for(let k=0;k<bodyLines.length;k++){
+      const l=bodyLines[k];
+      if(l==='')continue;
+      const nm=l.match(/^(\d{1,3})([.)])(?:\s+|(?=[^\d\s]))(\S.*)$/);
+      if(nm){
+        if(expectN===null)expectN=parseInt(nm[1],10);
+        bodyLines[k]=expectN+nm[2]+' '+nm[3];
+        expectN++;
+      }else{
+        expectN=null;
+      }
+    }
+  }
 
   // ตรวจไฟล์/ลิงก์ซ้ำ — เตือนเฉยๆ ไม่ตัดอัตโนมัติ (อาจเป็นการตั้งใจให้ทีมกราฟิกวางภาพติดกัน)
   const dupWarnings=[];

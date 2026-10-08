@@ -1280,6 +1280,17 @@ body.dark .dbg pre{background:#2d2d30;color:#8a8a8d;border-color:rgba(255,255,25
         </div>
       </div>
 
+
+      <!-- Grid Item 9 — ข้ามตัวหนา -->
+      <div class="g-item">
+        <div class="g-title">🚫 ข้ามตัวหนา — ลบ ** และไม่ทำเป็นหัวข้อ</div>
+        <label class="cki"><input type="checkbox" id="d-sbon" checked><div class="n">เปิดใช้งาน</div></label>
+        <p class="hint-msg">บรรทัดที่ <strong>ขึ้นต้นด้วยคำเหล่านี้</strong> จะถูก <strong>ลบตัวหนา (**) ออก</strong> และไม่ถูกจับเป็นหัวข้อ (ไม่ใส่ ##) เช่น <strong>**ภาพ: ศวิตา**</strong> → ภาพ: ศวิตา — ไม่สนเว้นวรรค ตัวพิมพ์ใหญ่-เล็ก หรืออีโมจินำหน้า (อีโมจิยังอยู่ครบ)</p>
+        <div class="setting-row">
+          <label class="det-label">คำที่ต้องข้าม (คั่นด้วยคอมม่า — พิมพ์เพิ่มได้):</label>
+          <input type="text" id="d-skipbold" class="trigger-input s" value="ภาพ:,เรื่อง:,Photo:,Photos:,Credit:,Credits:" placeholder="ภาพ:,เรื่อง:,Photo:,...">
+        </div>
+      </div>
     </div>
   </div>
 </details><div class="grid">
@@ -1531,8 +1542,8 @@ const CI_C={NEWS:'#e62227',POP:'#0000ff',WEALTH:'#c19380',LIFE:'#000000',SPORT:'
 
 // Storage
 const mem={};const sG=k=>{try{return localStorage.getItem(k)}catch{return mem[k]||null}};const sS=(k,v)=>{try{localStorage.setItem(k,v)}catch{mem[k]=v}};
-function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||2;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false;dNLP.checked=o.nlp!==false;dNLTol.value=o.nltol!==undefined?o.nltol:1;if(o.nlt)dNLT.value=o.nlt;dBareNum.checked=o.bn!==false;dMoreInfoLinks.checked=o.mil!==false}
-function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||2,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked,nlp:dNLP.checked,nltol:parseInt(dNLTol.value),nlt:dNLT.value,bn:dBareNum.checked,mil:dMoreInfoLinks.checked}));run()}
+function loadS(){$("inp-cat").value=sG("nf_cat")||"NEWS / POLITICS";$("inp-author").value=sG("nf_author")||"THE STANDARD TEAM";$("inp-pfx").value=sG("nf_pfx")||"UPDATE";$("inp-toc").value=sG("nf_toc")||"ประเด็นสำคัญ";let o={};try{o=JSON.parse(sG("nf_img")||"{}")}catch{}dH.checked=o.h!==false;dP.checked=o.p!==false;dU.checked=o.u!==false;dF.checked=o.f!==false;dD.checked=o.d!==false;dAB.checked=o.ab!==false;dAL.value=o.al||2;if(o.at)dAT.value=o.at;if(o.sh)dSH.value=o.sh;if(o.ht)dHT.value=o.ht;if(o.pt)dPT.value=o.pt;dDropCapUrl.checked=o.dcu!==false;dNLP.checked=o.nlp!==false;dNLTol.value=o.nltol!==undefined?o.nltol:1;if(o.nlt)dNLT.value=o.nlt;dBareNum.checked=o.bn!==false;dMoreInfoLinks.checked=o.mil!==false;dSBOn.checked=o.sbon!==false;dSHon.checked=o.shon!==false;if(o.sbw!==undefined)dSkipBold.value=o.sbw}
+function saveS(){sS("nf_cat",$("inp-cat").value);sS("nf_author",$("inp-author").value);sS("nf_pfx",$("inp-pfx").value);sS("nf_toc",$("inp-toc").value);sS("nf_img",JSON.stringify({h:dH.checked,p:dP.checked,u:dU.checked,f:dF.checked,d:dD.checked,ab:dAB.checked,al:parseInt(dAL.value)||2,at:dAT.value,sh:dSH.value,ht:dHT.value,pt:dPT.value,dcu:dDropCapUrl.checked,nlp:dNLP.checked,nltol:parseInt(dNLTol.value),nlt:dNLT.value,bn:dBareNum.checked,mil:dMoreInfoLinks.checked,sbon:dSBOn.checked,shon:dSHon.checked,sbw:dSkipBold.value}));run()}
 
 // Tabs
 $('mt-full').onclick=()=>{mode='full';$('mt-full').className='mtab on';$('mt-content').className='mtab';$('sbar').className='sbar';run()};
@@ -1553,7 +1564,7 @@ document.querySelectorAll('.ci-d').forEach(d=>{d.onclick=()=>{
 }});
 
 // Image Detection
-const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl'),dNLP=$('d-nlprelude'),dNLTol=$('d-nltolerance'),dNLT=$('d-nltriggers'),dBareNum=$('d-barenum'),dMoreInfoLinks=$('d-moreinfolinks');
+const dH=$('d-hint'),dP=$('d-pic'),dU=$('d-url'),dF=$('d-file'),dD=$('d-dedup'),dAB=$('d-artbrief'),dAL=$('d-artlines'),dAT=$('d-arttriggers'),dSH=$('d-shlabels'),dHT=$('d-hinttriggers'),dPT=$('d-pictriggers'),dDropCapUrl=$('d-dropcapurl'),dNLP=$('d-nlprelude'),dNLTol=$('d-nltolerance'),dNLT=$('d-nltriggers'),dBareNum=$('d-barenum'),dMoreInfoLinks=$('d-moreinfolinks'),dSBOn=$('d-sbon'),dSkipBold=$('d-skipbold'),dSHon=$('d-sh');
 const stripBoldMarkers=(s)=>(s||'').replace(/^\*\*|\*\*$/g,'').trim();
 const isHint=s=>{
   if(!dH.checked)return false;
@@ -1729,7 +1740,15 @@ function run(){
 
   // Sub-heading label — บรรทัด **label...** ที่ไม่ควรใส่ ## (วันที่, Time:, Where: ฯลฯ)
   const shTriggers=(dSH.value||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  // ข้ามตัวหนา: บรรทัดตัวหนาที่ "ขึ้นต้นด้วย" คำในช่อง (ไม่สนเว้นวรรค/ตัวพิมพ์/อีโมจิหรือสัญลักษณ์นำหน้า) จะไม่ถูกจับเป็นหัวข้อ
+  const skipBoldWords=(dSkipBold.value||'').split(',').map(w=>w.replace(/\s+/g,'').toLowerCase()).filter(Boolean);
+  const isSkipBold=(text)=>{
+    if(!dSBOn.checked||!skipBoldWords.length)return false;
+    const norm=(text||'').replace(/\*\*/g,'').replace(/^[^\p{L}\p{N}]+/u,'').replace(/\s+/g,'').toLowerCase();
+    return skipBoldWords.some(w=>norm.startsWith(w));
+  };
   const isSubLabel=(inner)=>{
+    if(!dSHon.checked)return false;
     if(!shTriggers.length)return false;
     const low=inner.trim().toLowerCase();
     return shTriggers.some(t=>t&&low.startsWith(t));
@@ -1952,6 +1971,15 @@ function run(){
     }
 
     const flushedN=flush();
+    // ข้ามตัวหนา: บรรทัดที่ขึ้นต้นด้วยคำในช่อง "ข้ามตัวหนา" (เช่น "ภาพ:") → ลบ ** ออกทั้งบรรทัด และไม่ทำเป็นหัวข้อ
+    // (ครอบคลุมทั้งตัวหนาทั้งบรรทัด, ตัวหนาเฉพาะ label, มี bullet/อีโมจินำหน้า — อีโมจิยังอยู่ครบ)
+    if(isSkipBold(ln)){
+      const hadBold=ln.includes('**');
+      if(hadBold)ln=ln.replace(/\*\*/g,'');
+      logs.push(`  🚫 SkipBold(L${i}): "${ln.substring(0,40)}" → ${hadBold?'ลบตัวหนา + ':''}ไม่ทำเป็นหัวข้อ`);
+      bodyLines.push(ln);
+      continue;
+    }
     let isHd=ln.startsWith('**')&&ln.endsWith('**')&&!ln.startsWith('**ภาพ:**')&&!ln.startsWith('**ภาพ :**');
     let isBH=ln.startsWith('• **')&&ln.endsWith('**')&&!ln.startsWith('• **ภาพ:**');
     // เช็คว่าเป็น "อีโมจิ/สัญลักษณ์ + **ข้อความ**" เช่น "🟡 **หัวข้อ**" (นักเขียนบางคนใช้อีโมจิสีแทน bullet)
@@ -2433,6 +2461,8 @@ $('txt-raw').addEventListener('paste',(e)=>{
 $('d-artlines').addEventListener('input',saveS);
 $('d-arttriggers').addEventListener('input',saveS);
 $('d-shlabels').addEventListener('input',saveS);
+$('d-skipbold').addEventListener('input',saveS);
+[$('d-sbon'),$('d-sh')].forEach(el=>el.addEventListener('change',saveS));
 $('d-hinttriggers').addEventListener('input',saveS);
 $('d-pictriggers').addEventListener('input',saveS);
 $('d-nlprelude').addEventListener('change',saveS);
@@ -2465,6 +2495,7 @@ $('btn-reset-imgsettings').addEventListener('click',()=>{
   dDropCapUrl.checked=true;
   dBareNum.checked=true;
   dMoreInfoLinks.checked=true;
+  dSBOn.checked=true;dSHon.checked=true;dSkipBold.value='ภาพ:,เรื่อง:,Photo:,Photos:,Credit:,Credits:';
   dNLP.checked=true;dNLTol.value=1;
   dNLT.value="เท็กซ์ทำปก:,บรีฟปก:,Highlights:,ไฮไลต์:,Cover text:,Cover brief:";
   saveS();

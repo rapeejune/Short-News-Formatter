@@ -2054,7 +2054,19 @@ function run(){
 
     // ยังรองรับอีโมจิ + ข้อความปกติ (ไม่มี **) เช่น "▪️ผลักดันโควตาสลากฯ..." ด้วย
     const emojiPlainMatch=(!isHd&&!isBH&&!emojiHeadingMatch)?ln.match(/^\s*[\p{Extended_Pictographic}\uFE0F\u200D]+\s*(.+)$/u):null;
-    let isEmojiH=!!emojiHeadingMatch||!!emojiPlainMatch;
+    // อีโมจิ + ข้อความ "ไม่มีตัวหนา" จะนับเป็นหัวข้อเฉพาะเมื่อ: โดดเดี่ยว (บรรทัดก่อน/หลังไม่ขึ้นต้นด้วยอีโมจิ — เป็นรายการ ✅ ❌ ถ้าอยู่ติดกัน),
+    // ไม่ยาวเกิน 150 ตัวอักษร และไม่ใช่ลิงก์ — ส่วนแบบมีตัวหนา "🟡 **หัวข้อ**" ถือว่าผู้เขียนตั้งใจ เป็นหัวข้อเสมอ
+    let emojiPlainOK=true;
+    if(emojiPlainMatch&&!emojiHeadingMatch){
+      const startsEmoji=(t)=>/^\s*[\p{Extended_Pictographic}]/u.test(t||'');
+      let pj2=i-1;while(pj2>=0&&normalizedLines[pj2].trim()==='')pj2--;
+      let nj2=i+1;while(nj2<normalizedLines.length&&normalizedLines[nj2].trim()==='')nj2++;
+      const neighborEmoji=(pj2>=0&&startsEmoji(normalizedLines[pj2]))||(nj2<normalizedLines.length&&startsEmoji(normalizedLines[nj2]));
+      const txt2=emojiPlainMatch[1].replace(/\*\*/g,'').trim();
+      emojiPlainOK=!neighborEmoji&&txt2.length<=150&&!/https?:\/\//i.test(txt2);
+      if(!emojiPlainOK)logs.push(`  ➖ EmojiLine(L${i}): ไม่นับเป็นหัวข้อ (${neighborEmoji?'อยู่ติดบรรทัดอีโมจิอื่น=รายการ':txt2.length>150?'ยาวเกิน 150':'เป็นลิงก์'}) — คงอีโมจิไว้`);
+    }
+    let isEmojiH=!!emojiHeadingMatch||(!!emojiPlainMatch&&emojiPlainOK);
     if(flushedN>0&&!isHd&&!isBH&&!isEmojiH&&dDropCapUrl.checked){
       awaitingSourceURL=true;
       logs.push(`  📎 Caption candidate(L${i}): "${ln.substring(0,40)}" — ถ้าบรรทัดถัดไปเป็นลิงก์จะตัดทิ้ง`);
